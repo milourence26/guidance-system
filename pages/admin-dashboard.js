@@ -10,6 +10,7 @@ const AdminDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [expandedItems, setExpandedItems] = useState({ 'Personal Data': true, 'Reports': true });
   const [activeTab, setActiveTab] = useState('overview');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const navItems = [
     {
@@ -65,6 +66,13 @@ const AdminDashboard = () => {
     { id: 5, name: 'Tom Brown', email: 'tom@example.com', course: 'Business', status: 'Active', date: '2024-01-11' }
   ];
 
+  const recentActivities = [
+    { type: 'registration', description: 'New student registered', time: '2 minutes ago', color: 'blue' },
+    { type: 'submission', description: 'Form submitted', time: '15 minutes ago', color: 'green' },
+    { type: 'assessment', description: 'Assessment pending review', time: '1 hour ago', color: 'yellow' },
+    { type: 'report', description: 'Report generated', time: '3 hours ago', color: 'purple' }
+  ];
+
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   
   const toggleExpand = (itemTitle) => {
@@ -82,6 +90,12 @@ const AdminDashboard = () => {
     }
   };
 
+  const filteredStudents = recentStudents.filter(student => 
+    student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    student.course.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const Sidebar = () => (
     <aside className={`fixed top-0 left-0 h-full z-20 transition-all duration-300 ease-in-out
       bg-white text-gray-800 ${sidebarOpen ? 'w-64' : 'w-20'} shadow-lg border-r border-gray-200`}>
@@ -94,6 +108,7 @@ const AdminDashboard = () => {
         <button 
           onClick={toggleSidebar}
           className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors"
+          aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
         >
           {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
@@ -105,9 +120,9 @@ const AdminDashboard = () => {
             <li key={item.title}>
               {item.subItems.length > 0 ? (
                 <>
-                  <div 
+                  <button 
                     onClick={() => toggleExpand(item.title)}
-                    className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors
+                    className={`w-full flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors
                       ${isActive(item.path) || item.subItems.some(sub => isActive(sub.path))
                         ? 'bg-blue-50 text-blue-600'
                         : 'hover:bg-gray-100 text-gray-700'}`}
@@ -125,16 +140,18 @@ const AdminDashboard = () => {
                           <ChevronRight className="w-4 h-4" />}
                       </span>
                     )}
-                  </div>
+                  </button>
 
                   {sidebarOpen && expandedItems[item.title] && (
                     <ul className="ml-2 mt-1 space-y-1">
                       {item.subItems.map((subItem) => (
                         <li key={subItem.title}>
-                          <div className={`flex items-center p-2 pl-8 rounded-lg text-sm transition-colors cursor-pointer
-                            ${isActive(subItem.path)
-                              ? 'bg-blue-100 text-blue-600 font-medium'
-                              : 'hover:bg-gray-100 text-gray-600'}`}
+                          <a
+                            href={subItem.path}
+                            className={`flex items-center p-2 pl-8 rounded-lg text-sm transition-colors
+                              ${isActive(subItem.path)
+                                ? 'bg-blue-100 text-blue-600 font-medium'
+                                : 'hover:bg-gray-100 text-gray-600'}`}
                           >
                             {subItem.icon && (
                               <span className="mr-2">
@@ -142,23 +159,25 @@ const AdminDashboard = () => {
                               </span>
                             )}
                             <span className="whitespace-nowrap">{subItem.title}</span>
-                          </div>
+                          </a>
                         </li>
                       ))}
                     </ul>
                   )}
                 </>
               ) : (
-                <div className={`flex items-center p-3 rounded-lg transition-colors cursor-pointer
-                  ${isActive(item.path)
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'hover:bg-gray-100 text-gray-700'}`}
+                <a
+                  href={item.path}
+                  className={`flex items-center p-3 rounded-lg transition-colors
+                    ${isActive(item.path)
+                      ? 'bg-blue-50 text-blue-600'
+                      : 'hover:bg-gray-100 text-gray-700'}`}
                 >
                   <span className={`${isActive(item.path) ? 'text-blue-600' : 'text-gray-500'}`}>
                     {item.icon}
                   </span>
                   {sidebarOpen && <span className="ml-3 font-medium whitespace-nowrap">{item.title}</span>}
-                </div>
+                </a>
               )}
             </li>
           ))}
@@ -190,10 +209,15 @@ const AdminDashboard = () => {
                   type="text"
                   placeholder="Search students, forms..."
                   className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
               
-              <button className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+              <button 
+                className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                aria-label="Notifications"
+              >
                 <Bell className="w-5 h-5" />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
               </button>
@@ -210,10 +234,19 @@ const AdminDashboard = () => {
 
         {/* Main Content */}
         <main className="p-6">
+          {/* Welcome Banner */}
+          <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl p-6 mb-8 text-white">
+            <h2 className="text-2xl font-bold mb-2">Welcome back, Admin</h2>
+            <p className="opacity-90">Here's what's happening with your guidance portal today.</p>
+          </div>
+
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {statsCards.map((stat, index) => (
-              <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+              <div 
+                key={index} 
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+              >
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
@@ -223,8 +256,8 @@ const AdminDashboard = () => {
                       <span>{stat.change} from last month</span>
                     </div>
                   </div>
-                  <div className={`p-3 rounded-lg bg-${stat.color}-100`}>
-                    <div className={`text-${stat.color}-600`}>
+                  <div className={`p-3 rounded-lg ${stat.color === 'blue' ? 'bg-blue-100' : stat.color === 'green' ? 'bg-green-100' : stat.color === 'purple' ? 'bg-purple-100' : 'bg-orange-100'}`}>
+                    <div className={stat.color === 'blue' ? 'text-blue-600' : stat.color === 'green' ? 'text-green-600' : stat.color === 'purple' ? 'text-purple-600' : 'text-orange-600'}>
                       {stat.icon}
                     </div>
                   </div>
@@ -236,16 +269,22 @@ const AdminDashboard = () => {
           {/* Dashboard Content */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Recent Students Table */}
-            <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="p-6 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900">Recent Students</h3>
                   <div className="flex items-center space-x-2">
-                    <button className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                    <button 
+                      className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                      aria-label="Add new student"
+                    >
                       <Plus className="w-4 h-4 mr-2" />
                       Add Student
                     </button>
-                    <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+                    <button 
+                      className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                      aria-label="Filter students"
+                    >
                       <Filter className="w-4 h-4" />
                     </button>
                   </div>
@@ -264,36 +303,53 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {recentStudents.map((student) => (
-                      <tr key={student.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">{student.name}</div>
-                            <div className="text-sm text-gray-500">{student.email}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.course}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(student.status)}`}>
-                            {student.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.date}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <div className="flex items-center space-x-2">
-                            <button className="p-1 text-blue-600 hover:bg-blue-100 rounded">
-                              <Eye className="w-4 h-4" />
-                            </button>
-                            <button className="p-1 text-green-600 hover:bg-green-100 rounded">
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button className="p-1 text-red-600 hover:bg-red-100 rounded">
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
+                    {filteredStudents.length > 0 ? (
+                      filteredStudents.map((student) => (
+                        <tr key={student.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">{student.name}</div>
+                              <div className="text-sm text-gray-500">{student.email}</div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.course}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(student.status)}`}>
+                              {student.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.date}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <div className="flex items-center space-x-2">
+                              <button 
+                                className="p-1 text-blue-600 hover:bg-blue-100 rounded"
+                                aria-label={`View ${student.name}`}
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                              <button 
+                                className="p-1 text-green-600 hover:bg-green-100 rounded"
+                                aria-label={`Edit ${student.name}`}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button 
+                                className="p-1 text-red-600 hover:bg-red-100 rounded"
+                                aria-label={`Delete ${student.name}`}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="5" className="px-6 py-4 text-center text-gray-500">
+                          No students found matching your search
                         </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -305,15 +361,24 @@ const AdminDashboard = () => {
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
                 <div className="space-y-3">
-                  <button className="w-full flex items-center p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                  <button 
+                    className="w-full flex items-center p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    aria-label="Create new form"
+                  >
                     <FileText className="w-5 h-5 text-blue-600 mr-3" />
                     <span className="text-sm font-medium">Create New Form</span>
                   </button>
-                  <button className="w-full flex items-center p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                  <button 
+                    className="w-full flex items-center p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    aria-label="Export reports"
+                  >
                     <Download className="w-5 h-5 text-green-600 mr-3" />
                     <span className="text-sm font-medium">Export Reports</span>
                   </button>
-                  <button className="w-full flex items-center p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                  <button 
+                    className="w-full flex items-center p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    aria-label="Review pending items"
+                  >
                     <UserCheck className="w-5 h-5 text-purple-600 mr-3" />
                     <span className="text-sm font-medium">Review Pending</span>
                   </button>
@@ -322,36 +387,25 @@ const AdminDashboard = () => {
 
               {/* Recent Activity */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
+                  <button 
+                    className="text-sm text-blue-600 hover:text-blue-800"
+                    aria-label="View all activities"
+                  >
+                    View All
+                  </button>
+                </div>
                 <div className="space-y-4">
-                  <div className="flex items-center">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-900">New student registered</p>
-                      <p className="text-xs text-gray-500">2 minutes ago</p>
+                  {recentActivities.map((activity, index) => (
+                    <div key={index} className="flex items-start">
+                      <div className={`w-2 h-2 mt-2 rounded-full mr-3 ${activity.color === 'blue' ? 'bg-blue-500' : activity.color === 'green' ? 'bg-green-500' : activity.color === 'yellow' ? 'bg-yellow-500' : 'bg-purple-500'}`}></div>
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-900">{activity.description}</p>
+                        <p className="text-xs text-gray-500">{activity.time}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-900">Form submitted</p>
-                      <p className="text-xs text-gray-500">15 minutes ago</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-2 h-2 bg-yellow-500 rounded-full mr-3"></div>
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-900">Assessment pending review</p>
-                      <p className="text-xs text-gray-500">1 hour ago</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full mr-3"></div>
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-900">Report generated</p>
-                      <p className="text-xs text-gray-500">3 hours ago</p>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>
