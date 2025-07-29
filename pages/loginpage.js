@@ -9,18 +9,29 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const handleLogin = async (e) => {
+ const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
-    });
 
-    if (res.ok) {
-      router.push('/admin-dashboard');
-    } else {
-      alert('Invalid credentials');
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        if (data.role === 'admin') {
+          router.push('/admin-dashboard');
+        } else {
+          alert('Only admin can access this page.');
+        }
+      } else {
+        alert(data.error || 'Login failed.');
+      }
+    } catch (error) {
+      alert('Something went wrong.');
     }
   };
 
