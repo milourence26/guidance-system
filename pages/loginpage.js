@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import React, { useState } from 'react';
 import { Eye, EyeOff, Lock, User, Shield } from 'lucide-react';
 
 export default function Login() {
@@ -6,47 +7,22 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
-  // Simulate checking for existing auth token
-  useEffect(() => {
-    const token = localStorage?.getItem('authToken');
-    if (token) {
-      console.log('User already authenticated');
-    }
-  }, []);
-
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setIsLoading(true);
-
-  try {
-    const response = await fetch('/api/login', {
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    const res = await fetch('/api/login', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),
     });
 
-    const data = await response.json();
-
-    if (response.ok) {
-      // Login success
-      console.log('Login success:', data);
-
-      // Redirect to dashboard
-      window.location.href = '/admin-dashboard';
+    if (res.ok) {
+      router.push('/admin-dashboard');
     } else {
-      alert(data.error || 'Login failed.');
+      alert('Invalid credentials');
     }
-  } catch (error) {
-    console.error('Login error:', error);
-    alert('Something went wrong. Please try again.');
-  } finally {
-    setIsLoading(false);
-  }
-};
-
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center p-4">
