@@ -1,13 +1,6 @@
 // pages/api/login.js
-import { Pool } from 'pg';
 import { setCookie } from 'cookies-next';
-
-const pool = new Pool({
-  connectionString: process.env.NEON_DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
-  },
-});
+import pool from '@/lib/db'; // Assuming you use baseUrl or alias, else use '../../lib/db'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -29,7 +22,6 @@ export default async function handler(req, res) {
     if (result.rows.length === 1) {
       const user = result.rows[0];
 
-      // Set auth cookie using cookies-next
       setCookie('auth', user.role, {
         req,
         res,

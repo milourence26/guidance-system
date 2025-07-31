@@ -1,4 +1,4 @@
-// components/StudentModal.js
+//BasicEdModal
 import { FiX, FiPlus, FiSave, FiUpload, FiUser } from 'react-icons/fi';
 
 const MONTHS = [

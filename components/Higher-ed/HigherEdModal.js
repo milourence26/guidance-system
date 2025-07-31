@@ -286,16 +286,22 @@ export default function HigherEdModal({
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">City Address (if boarding)</label>
-                    <textarea
-                      name="cityAddress"
-                      value={newStudent.cityAddress}
-                      onChange={handleInputChange}
-                      rows={3}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
+                 <div>
+  <label className="block text-sm font-medium text-gray-700 mb-2">
+    City Address (if boarding) <br />
+    <span className="text-xs text-gray-500">
+      Format: Street, Purok #, Barangay, City
+    </span>
+  </label>
+  <textarea
+    name="cityAddress"
+    value={newStudent.cityAddress}
+    onChange={handleInputChange}
+    rows={2}
+    placeholder="e.g., 123 Mabini St., Purok 5, Brgy. Malinis, Davao City"
+    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+  />
+</div>
                 </div>
 
                 {/* Birth Date and Place */}
