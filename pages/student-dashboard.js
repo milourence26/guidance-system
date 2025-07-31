@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useRouter } from 'next/router';
 import { 
   FiHome, FiCalendar, FiClock, FiUser, FiBook, FiAward, 
   FiFileText, FiBell, FiSearch, FiAlertCircle, 
@@ -13,6 +14,8 @@ const StudentDashboard = () => {
   const [fullname, setFullname] = useState("Juan Dela Cruz");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const router = useRouter();
 
   // Mock data for guidance office availability
   useEffect(() => {
@@ -41,6 +44,20 @@ const StudentDashboard = () => {
     setGuidanceAvailability(mockAvailability);
   }, []);
 
+  const handleLogout = async () => {
+    try {
+      const res = await fetch('/api/logout', { method: 'POST' });
+      if (res.ok) {
+        router.push('/loginpage');
+      } else {
+        console.error('Logout failed');
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      router.push('/loginpage');
+    }
+  };
+
   const handleDateChange = (date) => {
     setSelectedDate(date);
   };
@@ -58,44 +75,61 @@ const StudentDashboard = () => {
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
+    // On mobile, toggle open/close
+    if (window.innerWidth < 1024) {
+      setIsSidebarOpen(!isSidebarOpen);
+    } else {
+      // On desktop, toggle collapsed/expanded
+      setIsSidebarCollapsed(!isSidebarCollapsed);
+    }
   };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Overlay */}
+      {/* Overlay for mobile */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0  z-40"
+          className="fixed inset-0 z-40 lg:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - Always visible on desktop, collapsible */}
       <aside className={`
-        w-72 bg-white shadow-xl h-screen flex flex-col border-r border-gray-100 transition-all duration-300
+        ${isSidebarCollapsed ? 'w-16' : 'w-72'} bg-white shadow-xl h-screen flex flex-col border-r border-gray-100 transition-all duration-300
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
-        fixed z-50
+        lg:translate-x-0 fixed lg:static z-50
       `}>
         {/* Header */}
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center flex-shrink-0">
                 <img src="/images/guidancelogo.png" alt="Logo" className="w-full h-full object-cover"/>
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-800">Guidance</h1>
-                <p className="text-xs text-gray-500">Student Portal</p>
-              </div>
+              {!isSidebarCollapsed && (
+                <div>
+                  <h1 className="text-xl font-bold text-gray-800">Guidance</h1>
+                  <p className="text-xs text-gray-500">Student Portal</p>
+                </div>
+              )}
             </div>
-            {/* Close button */}
-            <button
-              onClick={() => setIsSidebarOpen(false)}
-              className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              <FiX className="w-5 h-5 text-gray-500" />
-            </button>
+            <div className="flex items-center space-x-2">
+              {/* Hamburger menu - visible on all devices */}
+              <button
+                onClick={toggleSidebar}
+                className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <FiMenu className="w-5 h-5 text-gray-600" />
+              </button>
+              {/* Close button - only visible on mobile */}
+              <button
+                onClick={() => setIsSidebarOpen(false)}
+                className="p-1 rounded-lg hover:bg-gray-100 transition-colors lg:hidden"
+              >
+                <FiX className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -106,14 +140,15 @@ const StudentDashboard = () => {
               setActiveTab('dashboard');
               setIsSidebarOpen(false);
             }}
-            className={`w-full flex items-center space-x-3 p-3 rounded-xl transition-all duration-200 ${
+            className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'space-x-3'} p-3 rounded-xl transition-all duration-200 ${
               activeTab === 'dashboard' 
                 ? "bg-gradient-to-r from-blue-50 to-purple-50 text-blue-600 shadow-sm" 
                 : "hover:bg-gray-50 text-gray-700"
             }`}
+            title={isSidebarCollapsed ? "Dashboard" : ""}
           >
             <FiHome size={20} className="flex-shrink-0" />
-            <span className="font-medium">Dashboard</span>
+            {!isSidebarCollapsed && <span className="font-medium">Dashboard</span>}
           </button>
 
           <button
@@ -121,14 +156,15 @@ const StudentDashboard = () => {
               setActiveTab('forms');
               setIsSidebarOpen(false);
             }}
-            className={`w-full flex items-center space-x-3 p-3 rounded-xl transition-all duration-200 ${
+            className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'space-x-3'} p-3 rounded-xl transition-all duration-200 ${
               activeTab === 'forms' 
                 ? "bg-gradient-to-r from-blue-50 to-purple-50 text-blue-600 shadow-sm" 
                 : "hover:bg-gray-50 text-gray-700"
             }`}
+            title={isSidebarCollapsed ? "My Forms" : ""}
           >
             <FiFileText size={20} className="flex-shrink-0" />
-            <span className="font-medium">My Forms</span>
+            {!isSidebarCollapsed && <span className="font-medium">My Forms</span>}
           </button>
 
           <button
@@ -136,45 +172,40 @@ const StudentDashboard = () => {
               setActiveTab('schedule');
               setIsSidebarOpen(false);
             }}
-            className={`w-full flex items-center space-x-3 p-3 rounded-xl transition-all duration-200 ${
+            className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'space-x-3'} p-3 rounded-xl transition-all duration-200 ${
               activeTab === 'schedule' 
                 ? "bg-gradient-to-r from-blue-50 to-purple-50 text-blue-600 shadow-sm" 
                 : "hover:bg-gray-50 text-gray-700"
             }`}
+            title={isSidebarCollapsed ? "Office Hours" : ""}
           >
             <FiCalendar size={20} className="flex-shrink-0" />
-            <span className="font-medium">Office Hours</span>
+            {!isSidebarCollapsed && <span className="font-medium">Office Hours</span>}
           </button>
         </nav>
         
         {/* User Profile */}
         <div className="p-4 border-t border-gray-100">
-          <div className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+          <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'space-x-3'} p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer`}>
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
               <span className="text-white font-medium text-sm">{fullname.split(' ').map(n => n[0]).join('')}</span>
             </div>
-            <div className="flex-1">
-              <p className="font-medium text-gray-800 text-sm">{fullname}</p>
-              <p className="text-xs text-gray-500">Student</p>
-            </div>
+            {!isSidebarCollapsed && (
+              <div className="flex-1">
+                <p className="font-medium text-gray-800 text-sm">{fullname}</p>
+                <p className="text-xs text-gray-500">Student</p>
+              </div>
+            )}
           </div>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-auto">
+      {/* Main Content - Account for sidebar on desktop */}
+      <main className="flex-1 lg:ml-0 overflow-auto">
         {/* Top Bar */}
         <header className="bg-white shadow-sm border-b border-gray-100 p-4 lg:p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              {/* Menu button for all devices */}
-              <button
-                onClick={toggleSidebar}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <FiMenu className="w-5 h-5 text-gray-600" />
-              </button>
-              
               <div>
                 <h2 className="text-xl lg:text-2xl font-bold text-gray-800">
                   {activeTab === 'dashboard' ? 'Dashboard' : 
@@ -199,12 +230,11 @@ const StudentDashboard = () => {
                 <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
               </button>
               
-              <div 
-                className="relative" 
-                onMouseEnter={() => setIsDropdownOpen(true)} 
-                onMouseLeave={() => setIsDropdownOpen(false)}
-              >
-                <button className="flex items-center space-x-2">
+              <div className="relative">
+                <button 
+                  className="flex items-center space-x-2"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                >
                   <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                     <span className="text-white font-medium text-xs">{fullname.split(' ').map(n => n[0]).join('')}</span>
                   </div>
@@ -213,13 +243,15 @@ const StudentDashboard = () => {
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-50">
                     <div className="py-2">
-                      <button className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2">
-                        <FiSettings size={16} />
-                        <span>Settings</span>
-                      </button>
-                      <button className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2">
+                      <button 
+                        className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                        onClick={() => {
+                          handleLogout();
+                          setIsDropdownOpen(false);
+                        }}
+                      >
                         <FiLogOut size={16} />
-                        <span>Sign Out</span>
+                        <span>Logout</span>
                       </button>
                     </div>
                   </div>

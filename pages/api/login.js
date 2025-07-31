@@ -1,6 +1,5 @@
-// pages/api/login.js
-import { setCookie } from 'cookies-next';
-import pool from '@/lib/db'; // Assuming you use baseUrl or alias, else use '../../lib/db'
+import bcrypt from 'bcryptjs';
+import pool from '@/lib/db';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -14,28 +13,23 @@ export default async function handler(req, res) {
   }
 
   try {
-    const query = 'SELECT * FROM users WHERE username = $1 AND password = $2';
-    const values = [username, password];
+    const query = 'SELECT id, username, password_hash, usertype, email FROM users WHERE username = $1 OR email = $1';
+    const values = [username];
 
     const result = await pool.query(query, values);
 
-    if (result.rows.length === 1) {
-      const user = result.rows[0];
-
-      setCookie('auth', user.role, {
-        req,
-        res,
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 60 * 60 * 24, // 1 day
-        path: '/',
-      });
-
-      return res.status(200).json({ success: true, role: user.role });
-    } else {
+    if (result.rows.length !== 1) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+
+    const user = result.rows[0];
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    return res.status(200).json({ success: true, usertype: user.usertype });
   } catch (error) {
     console.error('Login error:', error);
     return res.status(500).json({ error: 'Server error' });

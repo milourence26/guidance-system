@@ -1,10 +1,12 @@
 import { useRouter } from 'next/router';
 import React, { useState } from 'react';
-import { Eye, EyeOff, Lock, User, Shield } from 'lucide-react';
+import { Eye, EyeOff, Lock, User, Mail, Shield, Users } from 'lucide-react';
 
-export default function Login() {
+export default function Signup() {
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [usertype, setUsertype] = useState('student');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -16,24 +18,18 @@ export default function Login() {
     setError('');
 
     try {
-      const res = await fetch('/api/login', {
+      const res = await fetch('/api/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, email, password, usertype }),
       });
 
       const data = await res.json();
 
       if (res.ok) {
-        if (data.usertype === 'admin') {
-          router.push('/admin-dashboard');
-        } else if (data.usertype === 'student') {
-          router.push('/student-dashboard');
-        } else {
-          setError('Invalid user type.');
-        }
+        router.push('/loginpage');
       } else {
-        setError(data.error || 'Login failed.');
+        setError(data.error || 'Signup failed.');
       }
     } catch (error) {
       setError('Something went wrong.');
@@ -76,12 +72,12 @@ export default function Login() {
           </div>
         </div>
 
-        {/* Login Card */}
+        {/* Signup Card */}
         <div className="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
-            <h2 className="text-xl font-bold text-white text-center">Login</h2>
-            <p className="text-blue-100 text-center mt-1 text-sm">Enter your credentials to access the system</p>
+            <h2 className="text-xl font-bold text-white text-center">Sign Up</h2>
+            <p className="text-blue-100 text-center mt-1 text-sm">Create your account to get started</p>
           </div>
 
           {/* Form */}
@@ -95,7 +91,7 @@ export default function Login() {
               {/* Username Field */}
               <div className="space-y-1">
                 <label className="block text-sm font-medium text-gray-700">
-                  Username or Email
+                  Username
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -103,9 +99,28 @@ export default function Login() {
                   </div>
                   <input
                     type="text"
-                    placeholder="Enter your username or email"
+                    placeholder="Enter your username"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Email Field */}
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Email
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Mail className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white text-sm"
                   />
                 </div>
@@ -141,21 +156,24 @@ export default function Login() {
                 </div>
               </div>
 
-              {/* Remember Me & Forgot Password */}
-              <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <span className="text-gray-600">Remember me</span>
+              {/* User Type Field */}
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  User Type
                 </label>
-                <button
-                  type="button"
-                  className="text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  Forgot password?
-                </button>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Users className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <select
+                    value={usertype}
+                    onChange={(e) => setUsertype(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white text-sm appearance-none"
+                  >
+                    <option value="student">Student</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
               </div>
 
               {/* Submit Button */}
@@ -167,12 +185,25 @@ export default function Login() {
                 {isLoading ? (
                   <div className="flex items-center justify-center space-x-2">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Signing In...</span>
+                    <span>Creating Account...</span>
                   </div>
                 ) : (
-                  'Sign In'
+                  'Create Account'
                 )}
               </button>
+
+              {/* Login Link */}
+              <div className="text-center text-sm">
+                <p className="text-gray-600">
+                  Already have an account?{' '}
+                  <button
+                    onClick={() => router.push('/loginpage')}
+                    className="text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    Sign In
+                  </button>
+                </p>
+              </div>
             </div>
           </div>
         </div>

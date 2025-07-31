@@ -1,11 +1,7 @@
 import { useState } from "react";
 import dynamic from 'next/dynamic';
-import { 
-  FiMenu, FiGrid, FiUsers, FiFileText, FiUser, FiLogOut, 
-  FiChevronDown, FiChevronRight, FiBook, FiAward, FiHome,
-  FiCalendar, FiClock, FiSettings, FiBell, FiSearch,
-  FiBarChart, FiTrendingUp, FiUserCheck, FiFileCheck
-} from "react-icons/fi";
+import { useRouter } from 'next/router'; // Add this import
+import { FiMenu, FiGrid, FiUsers, FiFileText, FiUser, FiLogOut, FiChevronDown, FiChevronRight, FiBook, FiAward, FiHome, FiCalendar, FiClock, FiSettings, FiBell, FiSearch, FiBarChart, FiTrendingUp, FiUserCheck } from "react-icons/fi";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -18,9 +14,20 @@ export default function AdminDashboard() {
     start: "08:00",
     end: "17:00"
   });
+  const router = useRouter(); // Add router
 
-  const handleLogout = () => {
-    console.log("Logging out...");
+  const handleLogout = async () => {
+    try {
+      const res = await fetch('/api/logout', { method: 'POST' });
+      if (res.ok) {
+        router.push('/loginpage'); // Redirect to login page
+      } else {
+        console.error('Logout failed');
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      router.push('/loginpage'); // Fallback redirect
+    }
   };
 
   const stats = [
@@ -39,9 +46,11 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between">
             {isSidebarOpen && (
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">G</span>
-                </div>
+                <img 
+                  src="/images/guidancelogo.png" 
+                  alt="Guidance Logo"
+                  className="w-10 h-10 rounded-xl object-contain"
+                />
                 <div>
                   <h1 className="text-xl font-bold text-gray-800">Guidance</h1>
                   <p className="text-xs text-gray-500">Admin Panel</p>
@@ -59,37 +68,10 @@ export default function AdminDashboard() {
 
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-2">
-          <SidebarItem 
-            icon={FiGrid} 
-            label="Dashboard" 
-            activeTab={activeTab} 
-            setActiveTab={setActiveTab} 
-            isSidebarOpen={isSidebarOpen} 
-          />
-          
-          <SidebarItem 
-            icon={FiCalendar} 
-            label="Availability Schedule" 
-            activeTab={activeTab} 
-            setActiveTab={setActiveTab} 
-            isSidebarOpen={isSidebarOpen} 
-          />
-          
-          <SidebarItem 
-            icon={FiUsers} 
-            label="Manage Users" 
-            activeTab={activeTab} 
-            setActiveTab={setActiveTab} 
-            isSidebarOpen={isSidebarOpen} 
-          />
-          
-          <SidebarItem 
-            icon={FiFileText} 
-            label="Student Forms" 
-            activeTab={activeTab} 
-            setActiveTab={setActiveTab} 
-            isSidebarOpen={isSidebarOpen} 
-          />
+          <SidebarItem icon={FiGrid} label="Dashboard" activeTab={activeTab} setActiveTab={setActiveTab} isSidebarOpen={isSidebarOpen} />
+          <SidebarItem icon={FiCalendar} label="Availability Schedule" activeTab={activeTab} setActiveTab={setActiveTab} isSidebarOpen={isSidebarOpen} />
+          <SidebarItem icon={FiUsers} label="Manage Users" activeTab={activeTab} setActiveTab={setActiveTab} isSidebarOpen={isSidebarOpen} />
+          <SidebarItem icon={FiFileText} label="Student Forms" activeTab={activeTab} setActiveTab={setActiveTab} isSidebarOpen={isSidebarOpen} />
           
           {/* Personal Data Sheet Dropdown */}
           <div>
@@ -110,18 +92,8 @@ export default function AdminDashboard() {
             
             {isSidebarOpen && isPdsDropdownOpen && (
               <div className="ml-6 mt-2 space-y-1 border-l-2 border-gray-100 pl-4">
-                <SidebarSubItem 
-                  icon={FiAward} 
-                  label="Higher Education" 
-                  activeTab={activeTab} 
-                  setActiveTab={() => setActiveTab("PDS - Higher Education")}
-                />
-                <SidebarSubItem 
-                  icon={FiBook} 
-                  label="Senior High School" 
-                  activeTab={activeTab} 
-                  setActiveTab={() => setActiveTab("PDS - Senior High School")}
-                />
+                <SidebarSubItem icon={FiAward} label="Higher Education" activeTab={activeTab} setActiveTab={() => setActiveTab("PDS - Higher Education")}/>
+                <SidebarSubItem icon={FiBook} label="Senior High School" activeTab={activeTab} setActiveTab={() => setActiveTab("PDS - Senior High School")}/>
                 <SidebarSubItem 
                   icon={FiHome} 
                   label="Basic Education" 
@@ -141,8 +113,8 @@ export default function AdminDashboard() {
           />
           
           <SidebarItem 
-            icon={FiSettings} 
-            label="Settings" 
+            icon={FiFileText} 
+            label="Logs" 
             activeTab={activeTab} 
             setActiveTab={setActiveTab} 
             isSidebarOpen={isSidebarOpen} 
@@ -230,7 +202,7 @@ export default function AdminDashboard() {
           {activeTab === "Manage Users" && <ManageUsers />}
           {activeTab === "Student Forms" && <StudentForms />}
           {activeTab === "Reports" && <Reports />}
-          {activeTab === "Settings" && <Settings />}
+          {activeTab === "Logs" && <Logs />}
           {activeTab.startsWith("PDS") && <PersonalDataSheet type={activeTab.replace("PDS - ", "")} />}
         </div>
       </main>
@@ -397,7 +369,6 @@ function AvailabilitySchedule({ selectedDate, setSelectedDate, availabilityHours
           </div>
         </div>
 
-        {/* Settings */}
         <div className="space-y-6">
           {/* Availability Toggle */}
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
@@ -540,11 +511,11 @@ function Reports() {
   );
 }
 
-function Settings() {
+function Logs() {
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">System Settings</h3>
-      <p className="text-gray-600">Configure system preferences and settings.</p>
+      <h3 className="text-lg font-semibold text-gray-800 mb-4">Logs</h3>
+      <p className="text-gray-600">Logs here content here.</p>
     </div>
   );
 }

@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.2",
     "cookie": "^1.0.2",
     "cookies-next": "^6.1.0",
     "lucide-react": "^0.533.0",

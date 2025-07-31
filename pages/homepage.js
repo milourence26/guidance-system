@@ -1,16 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import {
-  Menu,
-  Search,
-  MapPin,
-  Phone,
-  Facebook,
-  Youtube,
-  MessageCircle,
-  ChevronDown,
-  X
-} from 'lucide-react';
+import {Menu,Search,MapPin,Phone,Facebook,Youtube,MessageCircle,ChevronDown,X} from 'lucide-react';
 
 export default function Homepage() {
   const router = useRouter();
