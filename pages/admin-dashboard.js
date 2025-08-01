@@ -81,7 +81,7 @@ export default function AdminDashboard() {
             >
               <div className="flex items-center space-x-3">
                 <FiUser size={20} className="flex-shrink-0" />
-                {isSidebarOpen && <span className="font-medium">Personal Data Sheet</span>}
+                {isSidebarOpen && <span className="font-medium text-black">Personal Data Sheet</span>}
               </div>
               {isSidebarOpen && (
                 <div className={`transition-transform duration-200 ${isPdsDropdownOpen ? "rotate-180" : ""}`}>
