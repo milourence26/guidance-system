@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from 'next/router';
 import {
-  FiMenu, FiGrid, FiUsers, FiFileText, FiUser, FiLogOut, FiChevronDown,
+  FiMenu, FiGrid, FiUsers, FiFileText, FiUser, FiLogOut, FiChevronDown,FiSave,
   FiChevronRight, FiBook, FiAward, FiHome, FiCalendar, FiClock, FiSettings,
-  FiBell, FiSearch, FiBarChart, FiTrendingUp, FiUserCheck, FiPlus
+  FiBell, FiSearch, FiBarChart, FiTrendingUp, FiUserCheck, FiPlus, FiEdit, FiTrash2
 } from "react-icons/fi";
 import BasicEdForm from '../components/Basic-ed/BasicEdForm';
 
@@ -89,6 +89,10 @@ export default function AdminDashboard() {
     parentSignatureDate: '',
   });
   const [errors, setErrors] = useState({});
+  const [students, setStudents] = useState([]);
+  const [editingStudentId, setEditingStudentId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const studentsPerPage = 10;
   const router = useRouter();
 
   const initialStudentState = {
@@ -163,7 +167,36 @@ export default function AdminDashboard() {
     setLastName(storedLastName);
   }, []);
 
-  const fullname = `${firstName} ${lastName}`;
+  useEffect(() => {
+    if (activeTab === "PDS - Basic Education") {
+      fetchStudents();
+    }
+  }, [activeTab, currentPage]);
+
+  const fetchStudents = async () => {
+    try {
+      const response = await fetch(`/api/admin/BasicEdStudents?page=${currentPage}&limit=${studentsPerPage}`);
+      if (!response.ok) {
+        let errorMessage = 'Failed to fetch students';
+        if (response.status === 404) {
+          errorMessage = 'Student data endpoint not found';
+        } else if (response.headers.get('content-type')?.includes('application/json')) {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } else {
+          const text = await response.text();
+          console.error('Non-JSON response:', text);
+          errorMessage = 'Server returned an unexpected response';
+        }
+        throw new Error(errorMessage);
+      }
+      const data = await response.json();
+      setStudents(data);
+    } catch (error) {
+      console.error('Error fetching students:', error);
+      setErrors({ general: error.message });
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -236,25 +269,167 @@ export default function AdminDashboard() {
     return newErrors;
   };
 
-  const handleAddStudent = () => {
+  const handleAddStudent = async () => {
     const validationErrors = validateForm();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
     }
-    // Simulate saving the student data
-    console.log('Saving student:', newStudent);
-    setShowModal(false);
-    setNewStudent(initialStudentState);
-    setErrors({});
+
+    try {
+      const birthDate = newStudent.birthYear && newStudent.birthMonth && newStudent.birthDay
+        ? `${newStudent.birthYear}-${MONTHS.indexOf(newStudent.birthMonth) + 1}-${newStudent.birthDay.padStart(2, '0')}`
+        : null;
+
+      const studentData = {
+        ...newStudent,
+        birth_date: birthDate,
+      };
+
+      const response = await fetch('/api/admin/BasicEdStudents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(studentData),
+      });
+
+      if (!response.ok) {
+        let errorMessage = 'Failed to save student';
+        if (response.headers.get('content-type')?.includes('application/json')) {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } else {
+          const text = await response.text();
+          console.error('Non-JSON response:', text);
+          errorMessage = 'Server returned an unexpected response';
+        }
+        throw new Error(errorMessage);
+      }
+      setShowModal(false);
+      setNewStudent(initialStudentState);
+      setErrors({});
+      fetchStudents();
+    } catch (error) {
+      console.error('Error saving student:', error);
+      setErrors({ general: error.message });
+    }
+  };
+
+  const handleEditStudent = async (id) => {
+    try {
+      const response = await fetch(`/api/admin/BasicEdStudents/${id}`);
+      if (!response.ok) {
+        let errorMessage = 'Failed to fetch student';
+        if (response.headers.get('content-type')?.includes('application/json')) {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } else {
+          const text = await response.text();
+          console.error('Non-JSON response:', text);
+          errorMessage = 'Server returned an unexpected response';
+        }
+        throw new Error(errorMessage);
+      }
+      const student = await response.json();
+      setNewStudent({
+        ...student,
+        studentType: student.student_type,
+        birthMonth: student.birth_date ? MONTHS[new Date(student.birth_date).getMonth()] : '',
+        birthDay: student.birth_date ? new Date(student.birth_date).getDate().toString() : '',
+        birthYear: student.birth_date ? new Date(student.birth_date).getFullYear().toString() : '',
+      });
+      setEditingStudentId(id);
+      setShowModal(true);
+    } catch (error) {
+      console.error('Error fetching student:', error);
+      setErrors({ general: error.message });
+    }
+  };
+
+  const handleUpdateStudent = async () => {
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    try {
+      const birthDate = newStudent.birthYear && newStudent.birthMonth && newStudent.birthDay
+        ? `${newStudent.birthYear}-${MONTHS.indexOf(newStudent.birthMonth) + 1}-${newStudent.birthDay.padStart(2, '0')}`
+        : null;
+
+      const studentData = {
+        ...newStudent,
+        birth_date: birthDate,
+      };
+
+      const response = await fetch(`/api/admin/BasicEdStudents/${editingStudentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(studentData),
+      });
+
+      if (!response.ok) {
+        let errorMessage = 'Failed to update student';
+        if (response.headers.get('content-type')?.includes('application/json')) {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } else {
+          const text = await response.text();
+          console.error('Non-JSON response:', text);
+          errorMessage = 'Server returned an unexpected response';
+        }
+        throw new Error(errorMessage);
+      }
+      setShowModal(false);
+      setNewStudent(initialStudentState);
+      setEditingStudentId(null);
+      setErrors({});
+      fetchStudents();
+    } catch (error) {
+      console.error('Error updating student:', error);
+      setErrors({ general: error.message });
+    }
+  };
+
+  const handleDeleteStudent = async (id) => {
+    if (!confirm('Are you sure you want to delete this student?')) return;
+    try {
+      const response = await fetch(`/api/admin/BasicEdStudents/${id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        let errorMessage = 'Failed to delete student';
+        if (response.headers.get('content-type')?.includes('application/json')) {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } else {
+          const text = await response.text();
+          console.error('Non-JSON response:', text);
+          errorMessage = 'Server returned an unexpected response';
+        }
+        throw new Error(errorMessage);
+      }
+      fetchStudents();
+    } catch (error) {
+      console.error('Error deleting student:', error);
+      setErrors({ general: error.message });
+    }
   };
 
   const stats = [
-    { title: "Total Students", value: "1,248", change: "+12%", icon: FiUsers, color: "bg-blue-500" },
+    { title: "Total Students", value: students.length.toString(), change: "+12%", icon: FiUsers, color: "bg-blue-500" },
     { title: "Pending Forms", value: "23", change: "-5%", icon: FiFileText, color: "bg-orange-500" },
     { title: "Completed Sessions", value: "186", change: "+8%", icon: FiUserCheck, color: "bg-green-500" },
     { title: "This Month", value: "45", change: "+15%", icon: FiTrendingUp, color: "bg-purple-500" },
   ];
+
+  const totalPages = Math.ceil(students.length / studentsPerPage);
+  const paginatedStudents = students.slice(
+    (currentPage - 1) * studentsPerPage,
+    currentPage * studentsPerPage
+  );
+
+  const fullname = `${firstName} ${lastName}`;
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -393,6 +568,11 @@ export default function AdminDashboard() {
         </header>
 
         <div className="p-6">
+          {errors.general && (
+            <div className="bg-red-100 text-red-700 p-3 rounded-md mb-4">
+              {errors.general}
+            </div>
+          )}
           {activeTab === "Dashboard" && <Dashboard stats={stats} />}
           {activeTab === "Availability Schedule" && <AvailabilitySchedule selectedDate={selectedDate} setSelectedDate={setSelectedDate} availabilityHours={availabilityHours} setAvailabilityHours={setAvailabilityHours} />}
           {activeTab === "Manage Users" && <ManageUsers />}
@@ -415,7 +595,17 @@ export default function AdminDashboard() {
               handleOrganizationChange={handleOrganizationChange}
               handleTestResultChange={handleTestResultChange}
               handleAddStudent={handleAddStudent}
+              handleEditStudent={handleEditStudent}
+              handleUpdateStudent={handleUpdateStudent}
+              handleDeleteStudent={handleDeleteStudent}
               initialStudentState={initialStudentState}
+              students={students}
+              editingStudentId={editingStudentId}
+              setEditingStudentId={setEditingStudentId}
+              currentPage={currentPage}
+              setCurrentPage={setCurrentPage}
+              totalPages={totalPages}
+              paginatedStudents={paginatedStudents}
             />
           )}
         </div>
@@ -851,6 +1041,35 @@ function ManageUsers() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const closeCreateModal = () => {
+    setIsCreateModalOpen(false);
+    setError('');
+    setFormData({
+      username: '',
+      email: '',
+      password: '',
+      usertype: 'student',
+      firstName: '',
+      lastName: '',
+      status: 'active',
+    });
+  };
+
+  const closeEditModal = () => {
+    setIsEditModalOpen(false);
+    setSelectedUser(null);
+    setError('');
+    setFormData({
+      username: '',
+      email: '',
+      password: '',
+      usertype: 'student',
+      firstName: '',
+      lastName: '',
+      status: 'active',
+    });
+  };
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
       <div className="p-6 border-b border-gray-100">
@@ -919,222 +1138,435 @@ function ManageUsers() {
         </div>
       )}
 
-      {/* Create User Modal */}
+           {/* Create User Modal */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Add New User</h3>
-            {error && (
-              <div className="mb-4 p-2 bg-red-50 text-red-700 text-sm rounded-lg">{error}</div>
-            )}
-            <form onSubmit={handleCreateUser} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Username</label>
-                <input
-                  type="text"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter username"
-                />
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-100 sticky top-0 bg-white z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <line x1="19" y1="8" x2="19" y2="14"></line>
+                    <line x1="22" y1="11" x2="16" y2="11"></line>
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">Add New User</h3>
+                  <p className="text-sm text-gray-500">Create a new user account</p>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter email"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Password</label>
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter password"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">User Type</label>
-                <select
-                  name="usertype"
-                  value={formData.usertype}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="student">Student</option>
-                  <option value="admin">Admin</option>
-                  <option value="guidance_advocate">Guidance Advocate</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">First Name</label>
-                <input
-                  type="text"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter first name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Last Name</label>
-                <input
-                  type="text"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter last name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Status</label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-              <div className="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-                  onClick={() => setIsCreateModalOpen(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Creating...' : 'Create User'}
-                </button>
-              </div>
-            </form>
+              <button
+                onClick={closeCreateModal}
+                className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6">
+              {error && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl flex items-start gap-2">
+                  <div className="w-5 h-5 bg-red-200 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-red-600 text-xs font-bold">!</span>
+                  </div>
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleCreateUser} className="space-y-4">
+                {/* Personal Information Section */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <line x1="16" y1="13" x2="8" y2="13"></line>
+                      <line x1="16" y1="17" x2="8" y2="17"></line>
+                      <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    Personal Information
+                  </h4>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                      <input
+                        type="text"
+                        name="firstName"
+                        value={formData.firstName}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        placeholder="First name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                      <input
+                        type="text"
+                        name="lastName"
+                        value={formData.lastName}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        placeholder="Last name"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Account Information Section */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    Account Information
+                  </h4>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                    <input
+                      type="text"
+                      name="username"
+                      value={formData.username}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      placeholder="Username"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                    <div className="relative">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                      </svg>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        placeholder="Email"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <div className="relative">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                      </svg>
+                      <input
+                        type="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        placeholder="Password"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Role & Status Section */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="3"></circle>
+                      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    Role & Status
+                  </h4>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">User Type</label>
+                      <select
+                        name="usertype"
+                        value={formData.usertype}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
+                      >
+                        <option value="student">Student</option>
+                        <option value="admin">Admin</option>
+                        <option value="guidance_advocate">Guidance Advocate</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                      <select
+                        name="status"
+                        value={formData.status}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
+                      >
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Modal Footer */}
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                  <button
+                    type="button"
+                    onClick={closeCreateModal}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2"
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                          <circle cx="8.5" cy="7" r="4"></circle>
+                          <polyline points="17 11 19 13 23 9"></polyline>
+                        </svg>
+                        Create User
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
 
       {/* Edit User Modal */}
       {isEditModalOpen && selectedUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Edit User</h3>
-            {error && (
-              <div className="mb-4 p-2 bg-red-50 text-red-700 text-sm rounded-lg">{error}</div>
-            )}
-            <form onSubmit={handleEditUser} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Username</label>
-                <input
-                  type="text"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter username"
-                />
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-100 sticky top-0 bg-white z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">Edit User</h3>
+                  <p className="text-sm text-gray-500">Update user information</p>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter email"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Password (leave blank to keep unchanged)</label>
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter new password"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">User Type</label>
-                <select
-                  name="usertype"
-                  value={formData.usertype}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="student">Student</option>
-                  <option value="admin">Admin</option>
-                  <option value="guidance_advocate">Guidance Advocate</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">First Name</label>
-                <input
-                  type="text"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter first name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Last Name</label>
-                <input
-                  type="text"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter last name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Status</label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-              <div className="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-                  onClick={() => setIsEditModalOpen(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Updating...' : 'Update User'}
-                </button>
-              </div>
-            </form>
+              <button
+                onClick={closeEditModal}
+                className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6">
+              {error && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl flex items-start gap-2">
+                  <div className="w-5 h-5 bg-red-200 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-red-600 text-xs font-bold">!</span>
+                  </div>
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleEditUser} className="space-y-4">
+                {/* Personal Information Section */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <line x1="16" y1="13" x2="8" y2="13"></line>
+                      <line x1="16" y1="17" x2="8" y2="17"></line>
+                      <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    Personal Information
+                  </h4>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                      <input
+                        type="text"
+                        name="firstName"
+                        value={formData.firstName}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                        placeholder="First name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                      <input
+                        type="text"
+                        name="lastName"
+                        value={formData.lastName}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                        placeholder="Last name"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Account Information Section */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    Account Information
+                  </h4>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                    <input
+                      type="text"
+                      name="username"
+                      value={formData.username}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                      placeholder="Username"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                    <div className="relative">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                      </svg>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                        placeholder="Email"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Password
+                      <span className="text-xs text-gray-500 ml-1">(leave blank to keep unchanged)</span>
+                    </label>
+                    <div className="relative">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                      </svg>
+                      <input
+                        type="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                        placeholder="New password"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Role & Status Section */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="3"></circle>
+                      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    Role & Status
+                  </h4>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">User Type</label>
+                      <select
+                        name="usertype"
+                        value={formData.usertype}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all bg-white"
+                      >
+                        <option value="student">Student</option>
+                        <option value="admin">Admin</option>
+                        <option value="guidance_advocate">Guidance Advocate</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                      <select
+                        name="status"
+                        value={formData.status}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all bg-white"
+                      >
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Modal Footer */}
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                  <button
+                    type="button"
+                    onClick={closeEditModal}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2"
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Updating...
+                      </>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                        </svg>
+                        Update User
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
@@ -1184,15 +1616,29 @@ function PersonalDataSheet({
   handleOrganizationChange, 
   handleTestResultChange, 
   handleAddStudent, 
-  initialStudentState 
+  handleEditStudent,
+  handleUpdateStudent,
+  handleDeleteStudent,
+  initialStudentState,
+  students,
+  editingStudentId,
+  setEditingStudentId,
+  currentPage,
+  setCurrentPage,
+  totalPages,
+  paginatedStudents
 }) {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold text-gray-800">Personal Data Sheet - {type}</h3>
         <button
-          onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors flex items-center gap-2"
+          onClick={() => {
+            setShowModal(true);
+            setNewStudent(initialStudentState);
+            setEditingStudentId(null);
+          }}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-sm"
         >
           <FiPlus size={16} />
           Add New Student
@@ -1200,22 +1646,111 @@ function PersonalDataSheet({
       </div>
 
       {type === "Basic Education" && (
-        <BasicEdForm
-          showModal={showModal}
-          setShowModal={setShowModal}
-          newStudent={newStudent}
-          setNewStudent={setNewStudent}
-          errors={errors}
-          setErrors={setErrors}
-          handleInputChange={handleInputChange}
-          handleSacramentChange={handleSacramentChange}
-          handleSiblingChange={handleSiblingChange}
-          handleEducationChange={handleEducationChange}
-          handleOrganizationChange={handleOrganizationChange}
-          handleTestResultChange={handleTestResultChange}
-          handleAddStudent={handleAddStudent}
-          initialStudentState={initialStudentState}
-        />
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <h4 className="text-md font-semibold text-gray-800 mb-4">Student List</h4>
+          {paginatedStudents.length === 0 ? (
+            <p className="text-gray-500 text-sm">No students found.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50 sticky top-0 z-10">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Type</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Birth Date</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {paginatedStudents.map((student) => (
+                    <tr key={student.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.id}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{`${student.given_name} ${student.last_name}`}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.student_type}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.gender}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.age}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {student.birth_date ? new Date(student.birth_date).toLocaleDateString() : '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button
+                          onClick={() => handleEditStudent(student.id)}
+                          className="text-blue-600 hover:text-blue-800 mr-4 transition-colors"
+                          title="Edit"
+                        >
+                          <FiEdit size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteStudent(student.id)}
+                          className="text-red-600 hover:text-red-800 transition-colors"
+                          title="Delete"
+                        >
+                          <FiTrash2 size={16} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {totalPages > 1 && (
+            <div className="mt-4 flex justify-between items-center">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  currentPage === 1
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                }`}
+              >
+                Previous
+              </button>
+              <span className="text-sm text-gray-600">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  currentPage === totalPages
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                }`}
+              >
+                Next
+              </button>
+            </div>
+          )}
+          <div className="mt-6">
+            <BasicEdForm
+              showModal={showModal}
+              setShowModal={setShowModal}
+              newStudent={newStudent}
+              setNewStudent={setNewStudent}
+              errors={errors}
+              setErrors={setErrors}
+              handleInputChange={handleInputChange}
+              handleSacramentChange={handleSacramentChange}
+              handleSiblingChange={handleSiblingChange}
+              handleEducationChange={handleEducationChange}
+              handleOrganizationChange={handleOrganizationChange}
+              handleTestResultChange={handleTestResultChange}
+              handleAddStudent={handleAddStudent}
+              handleEditStudent={handleEditStudent}
+              handleUpdateStudent={handleUpdateStudent}
+              handleDeleteStudent={handleDeleteStudent}
+              initialStudentState={initialStudentState}
+              students={students}
+              editingStudentId={editingStudentId}
+              setEditingStudentId={setEditingStudentId}
+            />
+          </div>
+        </div>
       )}
 
       {type !== "Basic Education" && (
