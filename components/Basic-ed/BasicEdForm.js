@@ -1,15 +1,45 @@
-//BasicEdModal.js
-import { FiX, FiPlus, FiSave, FiUpload, FiUser } from 'react-icons/fi';
+import { useRef } from "react";
+import { FiX, FiUser, FiUpload, FiSave } from "react-icons/fi";
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const FAMILY_INCOME_RANGES = ['Below ₱10,000.00', '₱10,001 - ₱15,000', '₱15,001 - ₱20,000', '₱20,001 - ₱25,000', '₱25,001 - ₱30,000', 'Above ₱30,000'];
 const RELATIONSHIP_OPTIONS = ['sister/brother', 'aunt/uncle', 'land lord/lady', 'grandparents', 'other'];
 
-export default function StudentModal({ showModal, setShowModal, newStudent, setNewStudent, errors, setErrors, handleAddStudent, handleInputChange, handleSacramentChange, handleSiblingChange, handleEducationChange, handleOrganizationChange, handleTestResultChange, triggerFileInput, fileInputRef, handleFileUpload, initialStudentState }) {
-  if (!showModal) return null;
+export default function BasicEdForm({
+  showModal,
+  setShowModal,
+  newStudent,
+  setNewStudent,
+  errors,
+  setErrors,
+  handleInputChange,
+  handleSacramentChange,
+  handleSiblingChange,
+  handleEducationChange,
+  handleOrganizationChange,
+  handleTestResultChange,
+  handleAddStudent,
+  initialStudentState,
+}) {
+  const fileInputRef = useRef(null);
+
+  const triggerFileInput = () => {
+    fileInputRef.current.click();
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewStudent({ ...newStudent, studentPhotoUrl: reader.result });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div className={`fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 ${showModal ? 'block' : 'hidden'}`}>
       <div className="bg-white rounded-xl shadow-xl w-full max-w-5xl flex flex-col max-h-[90vh]">
         {/* Modal Header */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-500 text-white p-6 rounded-t-xl">
@@ -50,35 +80,6 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-6">
-          {/* General Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">School Year</label>
-              <input
-                type="text"
-                name="schoolYear"
-                value={newStudent.schoolYear}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
-                placeholder="e.g., 2023-2024"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Grade/Year Level*</label>
-              <input
-                type="text"
-                name="gradeLevel"
-                value={newStudent.gradeLevel}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 text-sm ${
-                  errors.gradeLevel ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="e.g., Grade 7"
-              />
-              {errors.gradeLevel && <p className="mt-1 text-xs text-red-600">{errors.gradeLevel}</p>}
-            </div>
-          </div>
-
           {/* I. Personal Data */}
           <section className="mb-8">
             <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">I. Personal Data</h3>
@@ -112,7 +113,6 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                 </div>
               </div>
 
-              {/* Name Fields - Responsive 4-column on desktop, stacked on mobile */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Last Name*</label>
@@ -121,9 +121,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                     name="lastName"
                     value={newStudent.lastName}
                     onChange={handleInputChange}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 text-sm ${
-                      errors.lastName ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 text-sm ${errors.lastName ? 'border-red-500' : 'border-gray-300'}`}
                   />
                   {errors.lastName && <p className="mt-1 text-xs text-red-600">{errors.lastName}</p>}
                 </div>
@@ -134,9 +132,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                     name="givenName"
                     value={newStudent.givenName}
                     onChange={handleInputChange}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 text-sm ${
-                      errors.givenName ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 text-sm ${errors.givenName ? 'border-red-500' : 'border-gray-300'}`}
                   />
                   {errors.givenName && <p className="mt-1 text-xs text-red-600">{errors.givenName}</p>}
                 </div>

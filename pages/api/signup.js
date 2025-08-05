@@ -1,3 +1,4 @@
+//api/signup.js
 import bcrypt from 'bcryptjs';
 import pool from '@/lib/db';
 
@@ -6,14 +7,14 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { username, email, password, usertype } = req.body;
+  const { username, email, password, usertype, firstName, lastName } = req.body;
 
   // Validate input
-  if (!username || !email || !password || !usertype) {
+  if (!username || !email || !password || !usertype || !firstName || !lastName) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  if (!['admin', 'student'].includes(usertype)) {
+  if (!['admin', 'student', 'guidance_advocate'].includes(usertype)) {
     return res.status(400).json({ error: 'Invalid user type' });
   }
 
@@ -27,6 +28,14 @@ export default async function handler(req, res) {
 
   if (password.length < 6) {
     return res.status(400).json({ error: 'Password must be at least 6 characters' });
+  }
+
+  if (!/^[a-zA-Z\s-]{1,100}$/.test(firstName)) {
+    return res.status(400).json({ error: 'First name must be 1-100 characters (letters, spaces, or hyphens)' });
+  }
+
+  if (!/^[a-zA-Z\s-]{1,100}$/.test(lastName)) {
+    return res.status(400).json({ error: 'Last name must be 1-100 characters (letters, spaces, or hyphens)' });
   }
 
   try {
@@ -44,11 +53,11 @@ export default async function handler(req, res) {
 
     // Insert new user
     const insertQuery = `
-      INSERT INTO users (username, email, password_hash, usertype)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO users (username, email, password_hash, usertype, first_name, last_name)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING id, username, usertype
     `;
-    const insertValues = [username, email, passwordHash, usertype];
+    const insertValues = [username, email, passwordHash, usertype, firstName, lastName];
     const result = await pool.query(insertQuery, insertValues);
 
     return res.status(201).json({

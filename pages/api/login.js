@@ -1,3 +1,4 @@
+//api/login.js
 import bcrypt from 'bcryptjs';
 import pool from '@/lib/db';
 
@@ -13,7 +14,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const query = 'SELECT id, username, password_hash, usertype, email FROM users WHERE username = $1 OR email = $1';
+    const query = 'SELECT id, username, password_hash, usertype, email, first_name, last_name FROM users WHERE username = $1 OR email = $1';
     const values = [username];
 
     const result = await pool.query(query, values);
@@ -29,7 +30,12 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    return res.status(200).json({ success: true, usertype: user.usertype });
+    return res.status(200).json({
+      success: true,
+      usertype: user.usertype,
+      firstName: user.first_name,
+      lastName: user.last_name
+    });
   } catch (error) {
     console.error('Login error:', error);
     return res.status(500).json({ error: 'Server error' });

@@ -1,11 +1,29 @@
-//BasicEdModal.js
+// components/SeniorHighModal.js
 import { FiX, FiPlus, FiSave, FiUpload, FiUser } from 'react-icons/fi';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const FAMILY_INCOME_RANGES = ['Below ₱10,000.00', '₱10,001 - ₱15,000', '₱15,001 - ₱20,000', '₱20,001 - ₱25,000', '₱25,001 - ₱30,000', 'Above ₱30,000'];
 const RELATIONSHIP_OPTIONS = ['sister/brother', 'aunt/uncle', 'land lord/lady', 'grandparents', 'other'];
 
-export default function StudentModal({ showModal, setShowModal, newStudent, setNewStudent, errors, setErrors, handleAddStudent, handleInputChange, handleSacramentChange, handleSiblingChange, handleEducationChange, handleOrganizationChange, handleTestResultChange, triggerFileInput, fileInputRef, handleFileUpload, initialStudentState }) {
+export default function SeniorHighModal({
+  showModal,
+  setShowModal,
+  newStudent,
+  setNewStudent,
+  errors,
+  setErrors,
+  handleAddStudent,
+  handleInputChange,
+  handleSacramentChange,
+  handleSiblingChange,
+  handleEducationChange,
+  handleOrganizationChange,
+  handleTestResultChange,
+  triggerFileInput,
+  fileInputRef,
+  handleFileUpload,
+  initialStudentState
+}) {
   if (!showModal) return null;
 
   return (
@@ -16,7 +34,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-xl font-semibold">St. Rita's College of Balingasag</h2>
-              <p className="text-xs opacity-80">Basic Education Department - Guidance Center</p>
+              <p className="text-xs opacity-80">Senior High School Department - Guidance Center</p>
             </div>
             <button
               onClick={() => {
@@ -51,13 +69,13 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-6">
           {/* General Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">School Year</label>
               <input
                 type="text"
                 name="schoolYear"
-                value={newStudent.schoolYear}
+                value={newStudent.schoolYear || ''}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                 placeholder="e.g., 2023-2024"
@@ -65,17 +83,30 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Grade/Year Level*</label>
-              <input
-                type="text"
+              <select
                 name="gradeLevel"
-                value={newStudent.gradeLevel}
+                value={newStudent.gradeLevel || ''}
                 onChange={handleInputChange}
                 className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 text-sm ${
                   errors.gradeLevel ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="e.g., Grade 7"
-              />
+              >
+                <option value="">Select Grade Level</option>
+                <option value="Grade 11">Grade 11</option>
+                <option value="Grade 12">Grade 12</option>
+              </select>
               {errors.gradeLevel && <p className="mt-1 text-xs text-red-600">{errors.gradeLevel}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Strand/Track</label>
+              <input
+                type="text"
+                name="strand"
+                value={newStudent.strand || ''}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+                placeholder="e.g., STEM, ABM, HUMSS"
+              />
             </div>
           </div>
 
@@ -112,14 +143,14 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                 </div>
               </div>
 
-              {/* Name Fields - Responsive 4-column on desktop, stacked on mobile */}
+              {/* Name Fields */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Last Name*</label>
                   <input
                     type="text"
                     name="lastName"
-                    value={newStudent.lastName}
+                    value={newStudent.lastName || ''}
                     onChange={handleInputChange}
                     className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 text-sm ${
                       errors.lastName ? 'border-red-500' : 'border-gray-300'
@@ -132,7 +163,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                   <input
                     type="text"
                     name="givenName"
-                    value={newStudent.givenName}
+                    value={newStudent.givenName || ''}
                     onChange={handleInputChange}
                     className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 text-sm ${
                       errors.givenName ? 'border-red-500' : 'border-gray-300'
@@ -145,7 +176,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                   <input
                     type="text"
                     name="middleName"
-                    value={newStudent.middleName}
+                    value={newStudent.middleName || ''}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                   />
@@ -154,7 +185,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                   <label className="block text-sm font-medium text-gray-700 mb-1">Suffix</label>
                   <select
                     name="suffix"
-                    value={newStudent.suffix}
+                    value={newStudent.suffix || ''}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                   >
@@ -173,7 +204,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                   <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
                   <select
                     name="gender"
-                    value={newStudent.gender}
+                    value={newStudent.gender || ''}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                   >
@@ -188,7 +219,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                   <input
                     type="text"
                     name="citizenship"
-                    value={newStudent.citizenship}
+                    value={newStudent.citizenship || ''}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                   />
@@ -198,7 +229,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                   <input
                     type="number"
                     name="age"
-                    value={newStudent.age}
+                    value={newStudent.age || ''}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                   />
@@ -210,7 +241,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                 <input
                   type="text"
                   name="address"
-                  value={newStudent.address}
+                  value={newStudent.address || ''}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                 />
@@ -222,7 +253,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                   <div className="grid grid-cols-3 gap-2">
                     <select
                       name="birthMonth"
-                      value={newStudent.birthMonth}
+                      value={newStudent.birthMonth || ''}
                       onChange={handleInputChange}
                       className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                     >
@@ -235,7 +266,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                     </select>
                     <select
                       name="birthDay"
-                      value={newStudent.birthDay}
+                      value={newStudent.birthDay || ''}
                       onChange={handleInputChange}
                       className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                     >
@@ -248,7 +279,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                     </select>
                     <select
                       name="birthYear"
-                      value={newStudent.birthYear}
+                      value={newStudent.birthYear || ''}
                       onChange={handleInputChange}
                       className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                     >
@@ -268,7 +299,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                   <input
                     type="text"
                     name="birthPlace"
-                    value={newStudent.birthPlace}
+                    value={newStudent.birthPlace || ''}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                   />
@@ -281,7 +312,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                   <input
                     type="text"
                     name="contactNumber"
-                    value={newStudent.contactNumber}
+                    value={newStudent.contactNumber || ''}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                   />
@@ -291,7 +322,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                   <input
                     type="text"
                     name="religion"
-                    value={newStudent.religion}
+                    value={newStudent.religion || ''}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                   />
@@ -301,48 +332,51 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Sacraments Received</label>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {['baptism', 'firstCommunion', 'confirmation'].map((sacrament) => (
-                    <div key={sacrament} className="border border-gray-200 p-3 rounded-md">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-700 capitalize">
-                          {sacrament === 'firstCommunion' ? '1st Communion' : sacrament}
-                        </span>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={newStudent[sacrament].received}
-                            onChange={() =>
-                              handleSacramentChange(sacrament, 'received', !newStudent[sacrament].received)
-                            }
-                            className="sr-only peer"
-                          />
-                          <div className="w-10 h-5 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
-                        </label>
-                      </div>
-                      {newStudent[sacrament].received && (
-                        <div className="space-y-2">
-                          <div>
-                            <label className="block text-xs text-gray-600 mb-1">Date</label>
+                  {['baptism', 'firstCommunion', 'confirmation'].map((sacrament) => {
+                    const sacramentData = newStudent[sacrament] || { received: false, date: '', church: '' };
+                    return (
+                      <div key={sacrament} className="border border-gray-200 p-3 rounded-md">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-gray-700 capitalize">
+                            {sacrament === 'firstCommunion' ? '1st Communion' : sacrament}
+                          </span>
+                          <label className="relative inline-flex items-center cursor-pointer">
                             <input
-                              type="date"
-                              value={newStudent[sacrament].date}
-                              onChange={(e) => handleSacramentChange(sacrament, 'date', e.target.value)}
-                              className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                              type="checkbox"
+                              checked={sacramentData.received}
+                              onChange={() =>
+                                handleSacramentChange(sacrament, 'received', !sacramentData.received)
+                              }
+                              className="sr-only peer"
                             />
-                          </div>
-                          <div>
-                            <label className="block text-xs text-gray-600 mb-1">Church</label>
-                            <input
-                              type="text"
-                              value={newStudent[sacrament].church}
-                              onChange={(e) => handleSacramentChange(sacrament, 'church', e.target.value)}
-                              className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
-                            />
-                          </div>
+                            <div className="w-10 h-5 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                          </label>
                         </div>
-                      )}
-                    </div>
-                  ))}
+                        {sacramentData.received && (
+                          <div className="space-y-2">
+                            <div>
+                              <label className="block text-xs text-gray-600 mb-1">Date</label>
+                              <input
+                                type="date"
+                                value={sacramentData.date || ''}
+                                onChange={(e) => handleSacramentChange(sacrament, 'date', e.target.value)}
+                                className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-600 mb-1">Church</label>
+                              <input
+                                type="text"
+                                value={sacramentData.church || ''}
+                                onChange={(e) => handleSacramentChange(sacrament, 'church', e.target.value)}
+                                className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -361,7 +395,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                       <input
                         type="text"
                         name="fatherName"
-                        value={newStudent.fatherName}
+                        value={newStudent.fatherName || ''}
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                       />
@@ -372,7 +406,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                         <input
                           type="text"
                           name="fatherOccupation"
-                          value={newStudent.fatherOccupation}
+                          value={newStudent.fatherOccupation || ''}
                           onChange={handleInputChange}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                         />
@@ -381,7 +415,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                         <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                         <select
                           name="fatherStatus"
-                          value={newStudent.fatherStatus}
+                          value={newStudent.fatherStatus || ''}
                           onChange={handleInputChange}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                         >
@@ -396,7 +430,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                       <label className="block text-sm font-medium text-gray-700 mb-1">Highest Educational Attainment</label>
                       <select
                         name="fatherEducation"
-                        value={newStudent.fatherEducation}
+                        value={newStudent.fatherEducation || ''}
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                       >
@@ -417,7 +451,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                       <input
                         type="text"
                         name="motherName"
-                        value={newStudent.motherName}
+                        value={newStudent.motherName || ''}
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                       />
@@ -428,7 +462,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                         <input
                           type="text"
                           name="motherOccupation"
-                          value={newStudent.motherOccupation}
+                          value={newStudent.motherOccupation || ''}
                           onChange={handleInputChange}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                         />
@@ -437,7 +471,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                         <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                         <select
                           name="motherStatus"
-                          value={newStudent.motherStatus}
+                          value={newStudent.motherStatus || ''}
                           onChange={handleInputChange}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                         >
@@ -452,7 +486,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                       <label className="block text-sm font-medium text-gray-700 mb-1">Highest Educational Attainment</label>
                       <select
                         name="motherEducation"
-                        value={newStudent.motherEducation}
+                        value={newStudent.motherEducation || ''}
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                       >
@@ -516,7 +550,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                   <input
                     type="text"
                     name="languagesSpoken"
-                    value={newStudent.languagesSpoken}
+                    value={newStudent.languagesSpoken || ''}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                   />
@@ -548,11 +582,12 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                     <label key={source} className="inline-flex items-center">
                       <input
                         type="checkbox"
-                        checked={newStudent.financialSupport.includes(source)}
+                        checked={newStudent.financialSupport?.includes(source) || false}
                         onChange={() => {
-                          const updated = newStudent.financialSupport.includes(source)
-                            ? newStudent.financialSupport.filter((s) => s !== source)
-                            : [...newStudent.financialSupport, source];
+                          const currentSupport = newStudent.financialSupport || [];
+                          const updated = currentSupport.includes(source)
+                            ? currentSupport.filter((s) => s !== source)
+                            : [...currentSupport, source];
                           setNewStudent({ ...newStudent, financialSupport: updated });
                         }}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
@@ -561,12 +596,12 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                     </label>
                   ))}
                 </div>
-                {newStudent.financialSupport.includes('Others') && (
+                {newStudent.financialSupport?.includes('Others') && (
                   <div className="mt-3">
                     <input
                       type="text"
                       name="otherFinancialSupport"
-                      value={newStudent.otherFinancialSupport}
+                      value={newStudent.otherFinancialSupport || ''}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                       placeholder="Specify other financial support"
@@ -582,11 +617,12 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                     <label key={activity} className="inline-flex items-center">
                       <input
                         type="checkbox"
-                        checked={newStudent.leisureActivities.includes(activity)}
+                        checked={newStudent.leisureActivities?.includes(activity) || false}
                         onChange={() => {
-                          const updated = newStudent.leisureActivities.includes(activity)
-                            ? newStudent.leisureActivities.filter((a) => a !== activity)
-                            : [...newStudent.leisureActivities, activity];
+                          const currentActivities = newStudent.leisureActivities || [];
+                          const updated = currentActivities.includes(activity)
+                            ? currentActivities.filter((a) => a !== activity)
+                            : [...currentActivities, activity];
                           setNewStudent({ ...newStudent, leisureActivities: updated });
                         }}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
@@ -595,12 +631,12 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                     </label>
                   ))}
                 </div>
-                {newStudent.leisureActivities.includes('Others') && (
+                {newStudent.leisureActivities?.includes('Others') && (
                   <div className="mt-3">
                     <input
                       type="text"
                       name="otherLeisureActivities"
-                      value={newStudent.otherLeisureActivities}
+                      value={newStudent.otherLeisureActivities || ''}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                       placeholder="Specify other leisure activities"
@@ -614,7 +650,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                 <input
                   type="text"
                   name="specialInterests"
-                  value={newStudent.specialInterests}
+                  value={newStudent.specialInterests || ''}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                 />
@@ -655,7 +691,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                       <input
                         type="text"
                         name="guardianName"
-                        value={newStudent.guardianName}
+                        value={newStudent.guardianName || ''}
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                       />
@@ -664,7 +700,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                       <label className="block text-sm font-medium text-gray-700 mb-1">Relation</label>
                       <select
                         name="guardianRelation"
-                        value={newStudent.guardianRelation}
+                        value={newStudent.guardianRelation || ''}
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                       >
@@ -683,7 +719,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                       <input
                         type="text"
                         name="otherGuardianRelation"
-                        value={newStudent.otherGuardianRelation}
+                        value={newStudent.otherGuardianRelation || ''}
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                       />
@@ -694,7 +730,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                     <input
                       type="text"
                       name="guardianAddress"
-                      value={newStudent.guardianAddress}
+                      value={newStudent.guardianAddress || ''}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                     />
@@ -782,36 +818,30 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                     </tr>
                   </thead>
                   <tbody className="bg-white">
-                    {['Preschool', 'Grade School', 'High School'].map((level) => (
+                    {['Preschool', 'Elementary', 'Junior High'].map((level) => (
                       <tr key={level} className="hover:bg-gray-50">
                         <td className="px-3 py-2 text-sm font-medium text-gray-700">{level}</td>
                         <td className="px-3 py-2">
                           <input
                             type="text"
-                            value={newStudent.educationBackground[level.toLowerCase()]?.school || ''}
-                            onChange={(e) =>
-                              handleEducationChange(level.toLowerCase(), 'school', e.target.value)
-                            }
+                            value={newStudent[`${level.toLowerCase()}School`] || ''}
+                            onChange={(e) => handleInputChange({ target: { name: `${level.toLowerCase()}School`, value: e.target.value } })}
                             className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                           />
                         </td>
                         <td className="px-3 py-2">
                           <input
                             type="text"
-                            value={newStudent.educationBackground[level.toLowerCase()]?.awards || ''}
-                            onChange={(e) =>
-                              handleEducationChange(level.toLowerCase(), 'awards', e.target.value)
-                            }
+                            value={newStudent[`${level.toLowerCase()}Awards`] || ''}
+                            onChange={(e) => handleInputChange({ target: { name: `${level.toLowerCase()}Awards`, value: e.target.value } })}
                             className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                           />
                         </td>
                         <td className="px-3 py-2">
                           <input
                             type="text"
-                            value={newStudent.educationBackground[level.toLowerCase()]?.year || ''}
-                            onChange={(e) =>
-                              handleEducationChange(level.toLowerCase(), 'year', e.target.value)
-                            }
+                            value={newStudent[`${level.toLowerCase()}Year`] || ''}
+                            onChange={(e) => handleInputChange({ target: { name: `${level.toLowerCase()}Year`, value: e.target.value } })}
                             className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                           />
                         </td>
@@ -842,7 +872,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                         <td className="px-3 py-2">
                           <input
                             type="text"
-                            value={newStudent.organizations[index]?.year || ''}
+                            value={newStudent.organizations?.[index]?.year || ''}
                             onChange={(e) => handleOrganizationChange(index, 'year', e.target.value)}
                             className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                             placeholder="e.g., 2023-2024"
@@ -851,20 +881,16 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                         <td className="px-3 py-2">
                           <input
                             type="text"
-                            value={newStudent.organizations[index]?.organization || ''}
-                            onChange={(e) =>
-                              handleOrganizationChange(index, 'organization', e.target.value)
-                            }
+                            value={newStudent.organizations?.[index]?.organization || ''}
+                            onChange={(e) => handleOrganizationChange(index, 'organization', e.target.value)}
                             className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                           />
                         </td>
                         <td className="px-3 py-2">
                           <input
                             type="text"
-                            value={newStudent.organizations[index]?.designation || ''}
-                            onChange={(e) =>
-                              handleOrganizationChange(index, 'designation', e.target.value)
-                            }
+                            value={newStudent.organizations?.[index]?.designation || ''}
+                            onChange={(e) => handleOrganizationChange(index, 'designation', e.target.value)}
                             className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                           />
                         </td>
@@ -910,7 +936,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                       <input
                         type="text"
                         name="healthProblemDetails"
-                        value={newStudent.healthProblemDetails}
+                        value={newStudent.healthProblemDetails || ''}
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                         placeholder="Specify details"
@@ -985,7 +1011,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                       <input
                         type="text"
                         name="medicationDetails"
-                        value={newStudent.medicationDetails}
+                        value={newStudent.medicationDetails || ''}
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                         placeholder="Specify medication"
@@ -1022,7 +1048,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                       <input
                         type="text"
                         name="specialCareDetails"
-                        value={newStudent.specialCareDetails}
+                        value={newStudent.specialCareDetails || ''}
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                         placeholder="Specify special care needed"
@@ -1038,7 +1064,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                   <input
                     type="date"
                     name="lastDoctorVisit"
-                    value={newStudent.lastDoctorVisit}
+                    value={newStudent.lastDoctorVisit || ''}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                   />
@@ -1048,7 +1074,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                   <input
                     type="text"
                     name="doctorVisitReason"
-                    value={newStudent.doctorVisitReason}
+                    value={newStudent.doctorVisitReason || ''}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                   />
@@ -1076,7 +1102,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                         <td className="px-3 py-2">
                           <input
                             type="text"
-                            value={newStudent.testResults[index]?.test || ''}
+                            value={newStudent.testResults?.[index]?.test || ''}
                             onChange={(e) => handleTestResultChange(index, 'test', e.target.value)}
                             className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                           />
@@ -1084,7 +1110,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                         <td className="px-3 py-2">
                           <input
                             type="date"
-                            value={newStudent.testResults[index]?.date || ''}
+                            value={newStudent.testResults?.[index]?.date || ''}
                             onChange={(e) => handleTestResultChange(index, 'date', e.target.value)}
                             className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                           />
@@ -1092,7 +1118,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                         <td className="px-3 py-2">
                           <input
                             type="text"
-                            value={newStudent.testResults[index]?.rating || ''}
+                            value={newStudent.testResults?.[index]?.rating || ''}
                             onChange={(e) => handleTestResultChange(index, 'rating', e.target.value)}
                             className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                           />
@@ -1117,7 +1143,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                       <input
                         type="text"
                         name="signatureName"
-                        value={newStudent.signatureName}
+                        value={newStudent.signatureName || ''}
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                         placeholder="Enter name"
@@ -1125,20 +1151,20 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                       <input
                         type="date"
                         name="signatureDate"
-                        value={newStudent.signatureDate}
+                        value={newStudent.signatureDate || ''}
                         onChange={handleInputChange}
                         className="ml-3 px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                   </div>
-                  {newStudent.age < 18 && (
+                  {(newStudent.age && parseInt(newStudent.age) < 18) && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Parent/Guardian Signature</label>
                       <div className="flex items-center">
                         <input
                           type="text"
                           name="parentSignatureName"
-                          value={newStudent.parentSignatureName}
+                          value={newStudent.parentSignatureName || ''}
                           onChange={handleInputChange}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                           placeholder="Enter name"
@@ -1146,7 +1172,7 @@ export default function StudentModal({ showModal, setShowModal, newStudent, setN
                         <input
                           type="date"
                           name="parentSignatureDate"
-                          value={newStudent.parentSignatureDate}
+                          value={newStudent.parentSignatureDate || ''}
                           onChange={handleInputChange}
                           className="ml-3 px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                         />

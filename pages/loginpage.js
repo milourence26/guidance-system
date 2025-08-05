@@ -1,3 +1,4 @@
+//pages/loginpage.js
 import { useRouter } from 'next/router';
 import React, { useState } from 'react';
 import { Eye, EyeOff, Lock, User, Shield } from 'lucide-react';
@@ -25,10 +26,17 @@ export default function Login() {
       const data = await res.json();
 
       if (res.ok) {
+        // Store user data in localStorage
+        localStorage.setItem('usertype', data.usertype);
+        localStorage.setItem('firstName', data.firstName);
+        localStorage.setItem('lastName', data.lastName);
+
         if (data.usertype === 'admin') {
           router.push('/admin-dashboard');
         } else if (data.usertype === 'student') {
           router.push('/student-dashboard');
+        } else if (data.usertype === 'guidance_advocate') {
+          router.push('/advocate-dashboard');
         } else {
           setError('Invalid user type.');
         }
@@ -44,21 +52,18 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center p-4">
-      {/* Background Pattern */}
       <div className="absolute inset-0 opacity-5" style={{
         backgroundImage: 'radial-gradient(circle, #e5e7eb 1px, transparent 1px)',
         backgroundSize: '20px 20px'
       }}></div>
-      
-      {/* Main Container */}
+
       <div className="relative w-full max-w-sm mx-auto">
-        {/* Logo Section */}
         <div className="text-center mb-6">
           <div className="inline-flex items-center space-x-3 p-4 bg-white rounded-xl shadow-md">
             <div className="w-12 h-12 rounded-xl overflow-hidden flex items-center justify-center">
-              <img 
-                src="/images/guidancelogo.png" 
-                alt="SRCB Logo" 
+              <img
+                src="/images/guidancelogo.png"
+                alt="SRCB Logo"
                 className="w-12 h-12 object-cover rounded-xl"
                 onError={(e) => {
                   e.target.style.display = 'none';
@@ -76,15 +81,12 @@ export default function Login() {
           </div>
         </div>
 
-        {/* Login Card */}
         <div className="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
-          {/* Header */}
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
             <h2 className="text-xl font-bold text-white text-center">Login</h2>
             <p className="text-blue-100 text-center mt-1 text-sm">Enter your credentials to access the system</p>
           </div>
 
-          {/* Form */}
           <div className="px-6 py-6">
             {error && (
               <div className="mb-4 p-2 bg-red-50 text-red-700 text-sm rounded-lg">
@@ -92,40 +94,38 @@ export default function Login() {
               </div>
             )}
             <div className="space-y-4">
-              {/* Username Field */}
               <div className="space-y-1">
                 <label className="block text-sm font-medium text-gray-700">
                   Username or Email
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-4 w-4 text-gray-400" />
+                    <User className="h-4 w-4 text-black" />
                   </div>
                   <input
                     type="text"
                     placeholder="Enter your username or email"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white text-sm"
+                    className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white text-sm placeholder-gray-700 text-black"
                   />
                 </div>
               </div>
 
-              {/* Password Field */}
               <div className="space-y-1">
                 <label className="block text-sm font-medium text-gray-700">
                   Password
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-4 w-4 text-gray-400" />
+                    <Lock className="h-4 w-4 text-black" />
                   </div>
                   <input
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-9 pr-10 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white text-sm"
+                    className="w-full pl-9 pr-10 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white text-sm placeholder-gray-700 text-black"
                   />
                   <button
                     type="button"
@@ -141,7 +141,6 @@ export default function Login() {
                 </div>
               </div>
 
-              {/* Remember Me & Forgot Password */}
               <div className="flex items-center justify-between text-sm">
                 <label className="flex items-center space-x-2 cursor-pointer">
                   <input
@@ -158,7 +157,6 @@ export default function Login() {
                 </button>
               </div>
 
-              {/* Submit Button */}
               <button
                 onClick={handleSubmit}
                 disabled={isLoading}

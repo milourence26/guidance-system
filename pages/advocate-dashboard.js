@@ -2,24 +2,22 @@ import { useState, useEffect } from "react";
 import { useRouter } from 'next/router';
 import { 
   FiHome, FiCalendar, FiFileText, FiBell, FiSearch, FiAlertCircle, 
-  FiLogOut, FiMenu, FiBook, FiAward, FiUser
+  FiLogOut, FiMenu, FiUser
 } from "react-icons/fi";
 
-const StudentDashboard = () => {
+const AdvocateDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [educationLevel, setEducationLevel] = useState('higher-ed');
   const [guidanceAvailability, setGuidanceAvailability] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const router = useRouter();
 
   // Fetch firstName and lastName from localStorage on component mount
   useEffect(() => {
-    const storedFirstName = localStorage.getItem('firstName') || 'Juan';
-    const storedLastName = localStorage.getItem('lastName') || 'Dela Cruz';
+    const storedFirstName = localStorage.getItem('firstName') || 'Jane';
+    const storedLastName = localStorage.getItem('lastName') || 'Doe';
     setFirstName(storedFirstName);
     setLastName(storedLastName);
   }, []);
@@ -79,17 +77,47 @@ const StudentDashboard = () => {
     return guidanceAvailability.find(day => day.date === dateStr);
   };
 
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const handleAvailabilitySubmit = (e) => {
+    e.preventDefault();
+    const dateStr = selectedDate.toISOString().split('T')[0];
+    const status = e.target.status.value;
+    const newAvailability = {
+      date: dateStr,
+      status,
+      ...(status === 'open' && {
+        hours: {
+          start: e.target.startTime.value,
+          end: e.target.endTime.value
+        }
+      }),
+      ...(status === 'closed' && { reason: e.target.reason.value })
+    };
+
+    setGuidanceAvailability(prev => [
+      ...prev.filter(day => day.date !== dateStr),
+      newAvailability
+    ].sort((a, b) => a.date.localeCompare(b.date)));
+  };
+
+  const handleNavClick = (tab) => {
+    setActiveTab(tab);
+    // Only collapse sidebar on mobile (< 1024px)
+    if (window.innerWidth < 1024) {
+      setIsSidebarCollapsed(true);
+    }
+  };
 
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
   };
 
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Overlay for mobile */}
       <div 
-        className={`fixed inset-0 z-40 bg-opacity-50 transition-opacity duration-300 lg:hidden ${
+        className={`fixed inset-0 z-40 bg-black bg-opacity-50 transition-opacity duration-300 lg:hidden ${
           isSidebarCollapsed ? 'opacity-0 pointer-events-none' : 'opacity-100'
         }`}
         onClick={toggleSidebar}
@@ -114,11 +142,22 @@ const StudentDashboard = () => {
             <div className="flex items-center justify-between w-full">
               <div className="flex items-center space-x-3">
                 <div className="w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center flex-shrink-0">
-                  <img src="/images/guidancelogo.png" alt="Logo" className="w-full h-full object-cover"/>
+                  <img 
+                    src="/images/guidancelogo.png" 
+                    alt="Logo" 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                  <div className="w-9 h-9 bg-blue-600 rounded-xl hidden items-center justify-center">
+                    <FiUser className="w-6 h-6 text-white" />
+                  </div>
                 </div>
                 <div>
                   <h1 className="text-xl font-bold text-gray-800">Guidance</h1>
-                  <p className="text-xs text-gray-500">Student Portal</p>
+                  <p className="text-xs text-gray-500">Advocate Portal</p>
                 </div>
               </div>
               <button 
@@ -134,10 +173,7 @@ const StudentDashboard = () => {
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-2">
           <button
-            onClick={() => {
-              setActiveTab('dashboard');
-              setIsSidebarCollapsed(true); // Close sidebar on mobile after selection
-            }}
+            onClick={() => handleNavClick('dashboard')}
             className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'space-x-3'} p-3 rounded-xl transition-all duration-200 ${
               activeTab === 'dashboard' 
                 ? "bg-gradient-to-r from-blue-50 to-purple-50 text-blue-600 shadow-sm" 
@@ -150,35 +186,29 @@ const StudentDashboard = () => {
           </button>
 
           <button
-            onClick={() => {
-              setActiveTab('forms');
-              setIsSidebarCollapsed(true); // Close sidebar on mobile after selection
-            }}
+            onClick={() => handleNavClick('availability')}
             className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'space-x-3'} p-3 rounded-xl transition-all duration-200 ${
-              activeTab === 'forms' 
+              activeTab === 'availability' 
                 ? "bg-gradient-to-r from-blue-50 to-purple-50 text-blue-600 shadow-sm" 
                 : "hover:bg-gray-50 text-gray-700"
             }`}
-            title={isSidebarCollapsed ? "My Forms" : ""}
+            title={isSidebarCollapsed ? "Availability" : ""}
           >
-            <FiFileText size={20} className="flex-shrink-0" />
-            {!isSidebarCollapsed && <span className="font-medium">My Forms</span>}
+            <FiCalendar size={20} className="flex-shrink-0" />
+            {!isSidebarCollapsed && <span className="font-medium">Availability</span>}
           </button>
 
           <button
-            onClick={() => {
-              setActiveTab('schedule');
-              setIsSidebarCollapsed(true); // Close sidebar on mobile after selection
-            }}
+            onClick={() => handleNavClick('reports')}
             className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'space-x-3'} p-3 rounded-xl transition-all duration-200 ${
-              activeTab === 'schedule' 
+              activeTab === 'reports' 
                 ? "bg-gradient-to-r from-blue-50 to-purple-50 text-blue-600 shadow-sm" 
                 : "hover:bg-gray-50 text-gray-700"
             }`}
-            title={isSidebarCollapsed ? "Office Hours" : ""}
+            title={isSidebarCollapsed ? "Reports" : ""}
           >
-            <FiCalendar size={20} className="flex-shrink-0" />
-            {!isSidebarCollapsed && <span className="font-medium">Office Hours</span>}
+            <FiFileText size={20} className="flex-shrink-0" />
+            {!isSidebarCollapsed && <span className="font-medium">Reports</span>}
           </button>
         </nav>
 
@@ -186,15 +216,18 @@ const StudentDashboard = () => {
         <div className="p-4 border-t border-gray-100">
           <div 
             className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'space-x-3'} p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer`} 
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            onClick={handleLogout}
           >
             <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
               <span className="text-white font-medium text-sm">{fullname.split(' ').map(n => n[0]).join('')}</span>
             </div>
             {!isSidebarCollapsed && (
-              <div className="flex-1">
-                <p className="font-medium text-gray-800 text-sm">{fullname}</p>
-                <p className="text-xs text-gray-500">Student</p>
+              <div className="flex-1 flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-800 text-sm">{fullname}</p>
+                  <p className="text-xs text-gray-500">Guidance Advocate</p>
+                </div>
+                <FiLogOut size={16} className="text-gray-600" />
               </div>
             )}
           </div>
@@ -216,7 +249,8 @@ const StudentDashboard = () => {
               <div>
                 <h2 className="text-xl lg:text-2xl font-bold text-gray-800">
                   {activeTab === 'dashboard' ? 'Dashboard' : 
-                   activeTab === 'forms' ? 'My Forms' : 'Office Hours'}
+                   activeTab === 'availability' ? 'Availability' : 
+                   'Reports'}
                 </h2>
                 <p className="text-gray-500 mt-1 text-sm lg:text-base">Welcome back, {firstName}</p>
               </div>
@@ -240,29 +274,12 @@ const StudentDashboard = () => {
               <div className="relative">
                 <button 
                   className="flex items-center space-x-2"
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  onClick={handleLogout}
                 >
                   <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                     <span className="text-white font-medium text-xs">{fullname.split(' ').map(n => n[0]).join('')}</span>
                   </div>
                 </button>
-
-                {isDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-50">
-                    <div className="py-2">
-                      <button 
-                        className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
-                        onClick={() => {
-                          handleLogout();
-                          setIsDropdownOpen(false);
-                        }}
-                      >
-                        <FiLogOut size={16} />
-                        <span>Logout</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -275,48 +292,56 @@ const StudentDashboard = () => {
               {/* Welcome Card */}
               <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl p-4 lg:p-6 text-white">
                 <h2 className="text-xl lg:text-2xl font-bold mb-2">Welcome, {firstName}!</h2>
-                <p className="text-sm lg:text-base">View guidance office hours and complete your student forms.</p>
+                <p className="text-sm lg:text-base">Manage guidance office availability and generate reports.</p>
               </div>
 
-              {/* Guidance Office Status */}
+              {/* Quick Actions */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:p-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                  <FiCalendar className="w-5 h-5 mr-2 text-blue-600" />
-                  Guidance Office Status
+                  <FiHome className="w-5 h-5 mr-2 text-blue-600" />
+                  Quick Actions
                 </h3>
-
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div className="bg-blue-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-blue-800 mb-2">Regular Hours</h4>
-                    <p className="text-gray-700 text-sm lg:text-base">Monday to Friday: 8:00 AM - 5:00 PM</p>
-                    <p className="text-gray-700 text-sm lg:text-base">Saturday: 9:00 AM - 12:00 PM</p>
+                    <h4 className="font-medium text-blue-800 mb-2">Set Availability</h4>
+                    <p className="text-gray-700 text-sm lg:text-base">Update guidance office hours for a specific date.</p>
+                    <button 
+                      onClick={() => handleNavClick('availability')}
+                      className="mt-2 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded hover:bg-blue-200 transition-colors"
+                    >
+                      Go to Availability
+                    </button>
                   </div>
                   <div className="bg-green-50 p-4 rounded-lg border border-green-100">
-                    <h4 className="font-medium text-green-800 mb-2">Current Status</h4>
-                    <p className="text-gray-700 text-sm lg:text-base">Today: <span className="font-medium text-green-600">Open</span></p>
-                    <p className="text-gray-700 text-sm lg:text-base">Hours: 8:00 AM - 5:00 PM</p>
+                    <h4 className="font-medium text-green-800 mb-2">Generate Report</h4>
+                    <p className="text-gray-700 text-sm lg:text-base">Create a new guidance report.</p>
+                    <button 
+                      onClick={() => handleNavClick('reports')}
+                      className="mt-2 px-3 py-1 bg-green-100 text-green-800 text-sm rounded hover:bg-green-200 transition-colors"
+                    >
+                      Go to Reports
+                    </button>
                   </div>
                 </div>
               </div>
 
-              {/* Pending Forms */}
+              {/* Current Availability */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:p-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                  <FiFileText className="w-5 h-5 mr-2 text-blue-600" />
-                  Pending Forms
+                  <FiCalendar className="w-5 h-5 mr-2 text-blue-600" />
+                  Current Availability
                 </h3>
-
                 <div className="border border-yellow-200 bg-yellow-50 rounded-lg p-4">
                   <div className="flex items-start">
                     <FiAlertCircle className="w-5 h-5 text-yellow-600 mr-3 mt-0.5 flex-shrink-0" />
                     <div>
-                      <h4 className="font-medium text-yellow-800">Annual Student Profile Update</h4>
-                      <p className="text-sm text-yellow-700 mt-1">Please complete your student profile form for the current academic year.</p>
+                      <h4 className="font-medium text-yellow-800">Today’s Status</h4>
+                      <p className="text-sm text-yellow-700 mt-1">Guidance office is open today from 8:00 AM to 5:00 PM.</p>
                       <button 
-                        onClick={() => setActiveTab('forms')}
+                        onClick={() => handleNavClick('availability')}
                         className="mt-2 px-3 py-1 bg-yellow-100 text-yellow-800 text-sm rounded hover:bg-yellow-200 transition-colors"
                       >
-                        Complete Form
+                        Update Availability
                       </button>
                     </div>
                   </div>
@@ -325,98 +350,11 @@ const StudentDashboard = () => {
             </div>
           )}
 
-          {activeTab === 'forms' && (
-            <div className="space-y-6">
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:p-6">
-                <h2 className="text-xl font-bold text-gray-800 mb-6">Student Forms</h2>
-
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Education Level</h3>
-                  <div className="flex flex-wrap gap-3">
-                    <button
-                      onClick={() => setEducationLevel('higher-ed')}
-                      className={`px-3 lg:px-4 py-2 rounded-lg flex items-center text-sm lg:text-base ${educationLevel === 'higher-ed' ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-gray-100 text-gray-800 border border-gray-200'}`}
-                    >
-                      <FiAward className="w-4 h-4 mr-2" />
-                      Higher Education
-                    </button>
-                    <button
-                      onClick={() => setEducationLevel('senior-ed')}
-                      className={`px-3 lg:px-4 py-2 rounded-lg flex items-center text-sm lg:text-base ${educationLevel === 'senior-ed' ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-gray-100 text-gray-800 border border-gray-200'}`}
-                    >
-                      <FiBook className="w-4 h-4 mr-2" />
-                      Senior High School
-                    </button>
-                    <button
-                      onClick={() => setEducationLevel('basic-ed')}
-                      className={`px-3 lg:px-4 py-2 rounded-lg flex items-center text-sm lg:text-base ${educationLevel === 'basic-ed' ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-gray-100 text-gray-800 border border-gray-200'}`}
-                    >
-                      <FiUser className="w-4 h-4 mr-2" />
-                      Basic Education
-                    </button>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-2xl p-4 lg:p-6 shadow-sm border border-gray-100">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                    {educationLevel === 'higher-ed' ? 'College Student Information' :
-                     educationLevel === 'senior-ed' ? 'Senior High School Information' :
-                     'Basic Education Information'}
-                  </h3>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        {educationLevel === 'higher-ed' ? 'Major' :
-                         educationLevel === 'senior-ed' ? 'Strand' :
-                         'Grade Level'}
-                      </label>
-                      <input 
-                        type="text" 
-                        className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        {educationLevel === 'higher-ed' ? 'Year Level' :
-                         educationLevel === 'senior-ed' ? 'Grade Level' :
-                         'Section'}
-                      </label>
-                      <input 
-                        type="text" 
-                        className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                      />
-                    </div>
-                    <div className="lg:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        {educationLevel === 'higher-ed' ? 'Academic Concerns' :
-                         educationLevel === 'senior-ed' ? 'Career Guidance Needs' :
-                         'Behavioral Notes'}
-                      </label>
-                      <textarea 
-                        rows={3} 
-                        className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      ></textarea>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-6 flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3">
-                  <button className="px-4 py-2 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50">
-                    Save Draft
-                  </button>
-                  <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                    Submit Form
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'schedule' && (
+          {activeTab === 'availability' && (
             <div className="space-y-6">
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:p-6">
                 <h2 className="text-xl font-bold text-gray-800 mb-6">Guidance Office Availability</h2>
-
+                
                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                   {/* Calendar Section */}
                   <div className="xl:col-span-2">
@@ -427,14 +365,12 @@ const StudentDashboard = () => {
                           {day}
                         </div>
                       ))}
-
-                      {/* Calendar days */}
                       {Array.from({length: 35}).map((_, i) => {
                         const date = new Date();
                         date.setDate(date.getDate() + i - date.getDay());
                         const availability = checkAvailabilityForDate(date);
                         const isAvailable = availability && availability.status === "open";
-
+                        
                         return (
                           <button
                             key={i}
@@ -458,10 +394,61 @@ const StudentDashboard = () => {
                       })}
                     </div>
                   </div>
-
-                  {/* Availability Info */}
+                  
+                  {/* Availability Form and Details */}
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Availability Details</h3>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Set Availability</h3>
+                    <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+                      <form onSubmit={handleAvailabilitySubmit}>
+                        <div className="mb-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                          <select 
+                            name="status"
+                            className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            defaultValue={checkAvailabilityForDate(selectedDate)?.status || 'open'}
+                          >
+                            <option value="open">Open</option>
+                            <option value="closed">Closed</option>
+                          </select>
+                        </div>
+                        <div className="mb-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                          <input 
+                            type="time" 
+                            name="startTime"
+                            defaultValue={checkAvailabilityForDate(selectedDate)?.hours?.start || ''}
+                            className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div className="mb-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                          <input 
+                            type="time" 
+                            name="endTime"
+                            defaultValue={checkAvailabilityForDate(selectedDate)?.hours?.end || ''}
+                            className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div className="mb-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Reason (if closed)</label>
+                          <input 
+                            type="text" 
+                            name="reason"
+                            defaultValue={checkAvailabilityForDate(selectedDate)?.reason || ''}
+                            className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="e.g., University Holiday"
+                          />
+                        </div>
+                        <button 
+                          type="submit"
+                          className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        >
+                          Save Availability
+                        </button>
+                      </form>
+                    </div>
+
+                    <h3 className="text-lg font-semibold text-gray-800 mt-6 mb-4">Availability Details</h3>
                     {(() => {
                       const availability = checkAvailabilityForDate(selectedDate);
                       const dateStr = selectedDate.toISOString().split('T')[0];
@@ -470,7 +457,7 @@ const StudentDashboard = () => {
                       if (!availability) {
                         return (
                           <div className="p-4 bg-gray-50 rounded-lg">
-                            <p className="text-gray-500 text-sm">No availability information for this date</p>
+                            <p className="text-gray-500 text-sm">No availability set for this date</p>
                           </div>
                         );
                       }
@@ -504,25 +491,49 @@ const StudentDashboard = () => {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
 
-              {/* Regular Hours */}
+          {activeTab === 'reports' && (
+            <div className="space-y-6">
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Regular Office Hours</h3>
-                <div className="space-y-3">
-                  {[
-                    { day: "Monday", hours: "8:00 AM - 5:00 PM" },
-                    { day: "Tuesday", hours: "8:00 AM - 5:00 PM" },
-                    { day: "Wednesday", hours: "8:00 AM - 5:00 PM" },
-                    { day: "Thursday", hours: "8:00 AM - 5:00 PM" },
-                    { day: "Friday", hours: "8:00 AM - 5:00 PM" },
-                    { day: "Saturday", hours: "9:00 AM - 12:00 PM" },
-                    { day: "Sunday", hours: "Closed" },
-                  ].map((item, index) => (
-                    <div key={index} className="flex justify-between py-2 border-b border-gray-100 last:border-0">
-                      <span className="font-medium text-gray-700 text-sm lg:text-base">{item.day}</span>
-                      <span className="text-gray-600 text-sm lg:text-base">{item.hours}</span>
+                <h2 className="text-xl font-bold text-gray-800 mb-6">Guidance Reports</h2>
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Generate Report</h3>
+                  <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Report Type</label>
+                        <select 
+                          className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="student-progress">Student Progress</option>
+                          <option value="session-summary">Session Summary</option>
+                          <option value="attendance">Attendance</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+                        <input 
+                          type="text" 
+                          placeholder="MM/DD/YYYY - MM/DD/YYYY"
+                          className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                        />
+                      </div>
+                      <div className="lg:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                        <textarea 
+                          rows={3} 
+                          className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        ></textarea>
+                      </div>
                     </div>
-                  ))}
+                    <div className="mt-6 flex justify-end">
+                      <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        Generate Report
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -533,4 +544,4 @@ const StudentDashboard = () => {
   );
 };
 
-export default StudentDashboard;
+export default AdvocateDashboard;

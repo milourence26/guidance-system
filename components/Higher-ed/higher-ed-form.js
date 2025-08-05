@@ -1,9 +1,9 @@
 import { useState, useRef } from 'react';
 import { FiX, FiPlus, FiEdit2, FiSave, FiArchive, FiUser, FiPhone, FiMail, FiCalendar, FiUpload, FiImage, FiEye, FiPrinter } from 'react-icons/fi';
 
-import HigherEdModal from '../components/Higher-ed/HigherEdModal';
-import ViewStudentModal from '../components/Higher-ed/ViewStudentModal';
-import HigherEdPrintView from '../components/Higher-ed/HigherEdPrintView';
+import HigherEdModal from './HigherEdModal';
+import ViewStudentModal from './ViewStudentModal';
+import HigherEdPrintView from './HigherEdPrintView';
 
 export default function HigherEducationForm() {
   const [students, setStudents] = useState([]);

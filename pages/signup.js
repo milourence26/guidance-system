@@ -1,12 +1,15 @@
+//pages/signup.js
 import { useRouter } from 'next/router';
 import React, { useState } from 'react';
-import { Eye, EyeOff, Lock, User, Mail, Shield, Users } from 'lucide-react';
+import { Eye, EyeOff, Lock, User, Mail, Shield, Users, UserPlus } from 'lucide-react';
 
 export default function Signup() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [usertype, setUsertype] = useState('student');
+  const [firstName, setFirstName] = useState(''); // New state
+  const [lastName, setLastName] = useState(''); // New state
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -21,7 +24,7 @@ export default function Signup() {
       const res = await fetch('/api/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password, usertype }),
+        body: JSON.stringify({ username, email, password, usertype, firstName, lastName }), // Updated
       });
 
       const data = await res.json();
@@ -40,15 +43,12 @@ export default function Signup() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center p-4">
-      {/* Background Pattern */}
       <div className="absolute inset-0 opacity-5" style={{
         backgroundImage: 'radial-gradient(circle, #e5e7eb 1px, transparent 1px)',
         backgroundSize: '20px 20px'
       }}></div>
       
-      {/* Main Container */}
       <div className="relative w-full max-w-sm mx-auto">
-        {/* Logo Section */}
         <div className="text-center mb-6">
           <div className="inline-flex items-center space-x-3 p-4 bg-white rounded-xl shadow-md">
             <div className="w-12 h-12 rounded-xl overflow-hidden flex items-center justify-center">
@@ -72,15 +72,12 @@ export default function Signup() {
           </div>
         </div>
 
-        {/* Signup Card */}
         <div className="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
-          {/* Header */}
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
             <h2 className="text-xl font-bold text-white text-center">Sign Up</h2>
             <p className="text-blue-100 text-center mt-1 text-sm">Create your account to get started</p>
           </div>
 
-          {/* Form */}
           <div className="px-6 py-6">
             {error && (
               <div className="mb-4 p-2 bg-red-50 text-red-700 text-sm rounded-lg">
@@ -88,6 +85,44 @@ export default function Signup() {
               </div>
             )}
             <div className="space-y-4">
+              {/* First Name Field */}
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  First Name
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <UserPlus className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Enter your first name"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Last Name Field */}
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Last Name
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <UserPlus className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Enter your last name"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white text-sm"
+                  />
+                </div>
+              </div>
+
               {/* Username Field */}
               <div className="space-y-1">
                 <label className="block text-sm font-medium text-gray-700">
@@ -172,6 +207,7 @@ export default function Signup() {
                   >
                     <option value="student">Student</option>
                     <option value="admin">Admin</option>
+                    <option value="guidance_advocate">Guidance Advocate</option>
                   </select>
                 </div>
               </div>
