@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
 import { useRouter } from 'next/router';
 import { 
-  FiHome, FiCalendar, FiFileText, FiBell, FiSearch, FiAlertCircle, 
-  FiLogOut, FiMenu, FiUser
+  FiHome, FiCalendar, FiFileText, FiBell, FiLogOut, FiMenu, FiUser, FiAlertCircle 
 } from "react-icons/fi";
 
 const AdvocateDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [guidanceAvailability, setGuidanceAvailability] = useState([]);
+  const [appointments, setAppointments] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const router = useRouter();
 
   // Fetch firstName and lastName from localStorage on component mount
@@ -24,31 +24,39 @@ const AdvocateDashboard = () => {
 
   const fullname = `${firstName} ${lastName}`;
 
-  // Mock data for guidance office availability
+  // Mock data for student appointments
   useEffect(() => {
-    const mockAvailability = [
+    const mockAppointments = [
       { 
         date: new Date().toISOString().split('T')[0], 
-        hours: { start: "08:00", end: "17:00" },
-        status: "open"
+        time: "10:00",
+        student: "John Smith",
+        purpose: "Academic Counseling",
+        status: "confirmed"
+      },
+      { 
+        date: new Date().toISOString().split('T')[0], 
+        time: "14:30",
+        student: "Emma Johnson",
+        purpose: "Career Guidance",
+        status: "pending"
       },
       { 
         date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-        hours: { start: "09:00", end: "16:00" },
-        status: "open" 
+        time: "09:00",
+        student: "Michael Brown",
+        purpose: "Personal Counseling",
+        status: "confirmed"
       },
       { 
         date: new Date(Date.now() + 172800000).toISOString().split('T')[0],
-        hours: { start: "10:00", end: "15:00" },
-        status: "open" 
-      },
-      { 
-        date: new Date(Date.now() + 259200000).toISOString().split('T')[0],
-        status: "closed",
-        reason: "University Holiday"
+        time: "11:00",
+        student: "Sarah Davis",
+        purpose: "Follow-up Session",
+        status: "cancelled"
       }
     ];
-    setGuidanceAvailability(mockAvailability);
+    setAppointments(mockAppointments);
   }, []);
 
   const handleLogout = async () => {
@@ -66,42 +74,20 @@ const AdvocateDashboard = () => {
       console.error('Logout error:', error);
       router.push('/loginpage');
     }
+    setIsDropdownOpen(false); // Close dropdown on logout
   };
 
   const handleDateChange = (date) => {
     setSelectedDate(date);
   };
 
-  const checkAvailabilityForDate = (date) => {
+  const getAppointmentsForDate = (date) => {
     const dateStr = date.toISOString().split('T')[0];
-    return guidanceAvailability.find(day => day.date === dateStr);
-  };
-
-  const handleAvailabilitySubmit = (e) => {
-    e.preventDefault();
-    const dateStr = selectedDate.toISOString().split('T')[0];
-    const status = e.target.status.value;
-    const newAvailability = {
-      date: dateStr,
-      status,
-      ...(status === 'open' && {
-        hours: {
-          start: e.target.startTime.value,
-          end: e.target.endTime.value
-        }
-      }),
-      ...(status === 'closed' && { reason: e.target.reason.value })
-    };
-
-    setGuidanceAvailability(prev => [
-      ...prev.filter(day => day.date !== dateStr),
-      newAvailability
-    ].sort((a, b) => a.date.localeCompare(b.date)));
+    return appointments.filter(appointment => appointment.date === dateStr);
   };
 
   const handleNavClick = (tab) => {
     setActiveTab(tab);
-    // Only collapse sidebar on mobile (< 1024px)
     if (window.innerWidth < 1024) {
       setIsSidebarCollapsed(true);
     }
@@ -109,6 +95,10 @@ const AdvocateDashboard = () => {
 
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
+
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
   };
 
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -186,16 +176,16 @@ const AdvocateDashboard = () => {
           </button>
 
           <button
-            onClick={() => handleNavClick('availability')}
+            onClick={() => handleNavClick('appointments')}
             className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'space-x-3'} p-3 rounded-xl transition-all duration-200 ${
-              activeTab === 'availability' 
+              activeTab === 'appointments' 
                 ? "bg-gradient-to-r from-blue-50 to-purple-50 text-blue-600 shadow-sm" 
                 : "hover:bg-gray-50 text-gray-700"
             }`}
-            title={isSidebarCollapsed ? "Availability" : ""}
+            title={isSidebarCollapsed ? "Appointments" : ""}
           >
             <FiCalendar size={20} className="flex-shrink-0" />
-            {!isSidebarCollapsed && <span className="font-medium">Availability</span>}
+            {!isSidebarCollapsed && <span className="font-medium">Appointments</span>}
           </button>
 
           <button
@@ -210,28 +200,19 @@ const AdvocateDashboard = () => {
             <FiFileText size={20} className="flex-shrink-0" />
             {!isSidebarCollapsed && <span className="font-medium">Reports</span>}
           </button>
-        </nav>
 
-        {/* User Profile */}
-        <div className="p-4 border-t border-gray-100">
-          <div 
-            className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'space-x-3'} p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer`} 
-            onClick={handleLogout}
-          >
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-white font-medium text-sm">{fullname.split(' ').map(n => n[0]).join('')}</span>
-            </div>
-            {!isSidebarCollapsed && (
-              <div className="flex-1 flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-gray-800 text-sm">{fullname}</p>
-                  <p className="text-xs text-gray-500">Guidance Advocate</p>
-                </div>
-                <FiLogOut size={16} className="text-gray-600" />
-              </div>
-            )}
+          {/* Logout Button */}
+          <div className="border-t border-gray-100 pt-2">
+            <button
+              onClick={handleLogout}
+              className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'space-x-3'} p-3 rounded-xl transition-all duration-200 hover:bg-gray-50 text-gray-700`}
+              title={isSidebarCollapsed ? "Logout" : ""}
+            >
+              <FiLogOut size={20} className="flex-shrink-0" />
+              {!isSidebarCollapsed && <span className="font-medium">Logout</span>}
+            </button>
           </div>
-        </div>
+        </nav>
       </aside>
 
       {/* Main Content */}
@@ -249,37 +230,39 @@ const AdvocateDashboard = () => {
               <div>
                 <h2 className="text-xl lg:text-2xl font-bold text-gray-800">
                   {activeTab === 'dashboard' ? 'Dashboard' : 
-                   activeTab === 'availability' ? 'Availability' : 
+                   activeTab === 'appointments' ? 'Appointments' : 
                    'Reports'}
                 </h2>
                 <p className="text-gray-500 mt-1 text-sm lg:text-base">Welcome back, {firstName}</p>
               </div>
             </div>
 
-            <div className="flex items-center space-x-2 lg:space-x-4">
-              <div className="relative hidden sm:block">
-                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                <input 
-                  type="text" 
-                  placeholder="Search..." 
-                  className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-40 lg:w-auto"
-                />
-              </div>
-
+            <div className="flex items-center space-x-2 lg:space-x-4 relative">
               <button className="relative p-2 text-gray-400 hover:text-gray-600 transition-colors">
                 <FiBell size={20} />
                 <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
               </button>
-
               <div className="relative">
                 <button 
                   className="flex items-center space-x-2"
-                  onClick={handleLogout}
+                  onClick={toggleDropdown}
                 >
+                  <span className="text-gray-800 font-medium text-sm lg:text-base">{fullname}</span>
                   <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                     <span className="text-white font-medium text-xs">{fullname.split(' ').map(n => n[0]).join('')}</span>
                   </div>
                 </button>
+                {isDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-sm border border-gray-100 z-50">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg"
+                    >
+                      <FiLogOut size={16} />
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -292,7 +275,7 @@ const AdvocateDashboard = () => {
               {/* Welcome Card */}
               <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl p-4 lg:p-6 text-white">
                 <h2 className="text-xl lg:text-2xl font-bold mb-2">Welcome, {firstName}!</h2>
-                <p className="text-sm lg:text-base">Manage guidance office availability and generate reports.</p>
+                <p className="text-sm lg:text-base">Manage student appointments and generate reports.</p>
               </div>
 
               {/* Quick Actions */}
@@ -303,13 +286,13 @@ const AdvocateDashboard = () => {
                 </h3>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div className="bg-blue-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-blue-800 mb-2">Set Availability</h4>
-                    <p className="text-gray-700 text-sm lg:text-base">Update guidance office hours for a specific date.</p>
+                    <h4 className="font-medium text-blue-800 mb-2">View Appointments</h4>
+                    <p className="text-gray-700 text-sm lg:text-base">Check and manage student appointments.</p>
                     <button 
-                      onClick={() => handleNavClick('availability')}
+                      onClick={() => handleNavClick('appointments')}
                       className="mt-2 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded hover:bg-blue-200 transition-colors"
                     >
-                      Go to Availability
+                      Go to Appointments
                     </button>
                   </div>
                   <div className="bg-green-50 p-4 rounded-lg border border-green-100">
@@ -325,23 +308,33 @@ const AdvocateDashboard = () => {
                 </div>
               </div>
 
-              {/* Current Availability */}
+              {/* Today's Appointments */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:p-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                   <FiCalendar className="w-5 h-5 mr-2 text-blue-600" />
-                  Current Availability
+                  Today's Appointments
                 </h3>
                 <div className="border border-yellow-200 bg-yellow-50 rounded-lg p-4">
                   <div className="flex items-start">
                     <FiAlertCircle className="w-5 h-5 text-yellow-600 mr-3 mt-0.5 flex-shrink-0" />
                     <div>
-                      <h4 className="font-medium text-yellow-800">Today’s Status</h4>
-                      <p className="text-sm text-yellow-700 mt-1">Guidance office is open today from 8:00 AM to 5:00 PM.</p>
+                      <h4 className="font-medium text-yellow-800">Today's Schedule</h4>
+                      {(() => {
+                        const todayAppointments = getAppointmentsForDate(new Date());
+                        if (todayAppointments.length === 0) {
+                          return <p className="text-sm text-yellow-700 mt-1">No appointments scheduled for today.</p>;
+                        }
+                        return (
+                          <p className="text-sm text-yellow-700 mt-1">
+                            You have {todayAppointments.length} appointment{todayAppointments.length > 1 ? 's' : ''} today.
+                          </p>
+                        );
+                      })()}
                       <button 
-                        onClick={() => handleNavClick('availability')}
+                        onClick={() => handleNavClick('appointments')}
                         className="mt-2 px-3 py-1 bg-yellow-100 text-yellow-800 text-sm rounded hover:bg-yellow-200 transition-colors"
                       >
-                        Update Availability
+                        View Appointments
                       </button>
                     </div>
                   </div>
@@ -350,10 +343,10 @@ const AdvocateDashboard = () => {
             </div>
           )}
 
-          {activeTab === 'availability' && (
+          {activeTab === 'appointments' && (
             <div className="space-y-6">
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:p-6">
-                <h2 className="text-xl font-bold text-gray-800 mb-6">Guidance Office Availability</h2>
+                <h2 className="text-xl font-bold text-gray-800 mb-6">Student Appointments</h2>
                 
                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                   {/* Calendar Section */}
@@ -368,8 +361,8 @@ const AdvocateDashboard = () => {
                       {Array.from({length: 35}).map((_, i) => {
                         const date = new Date();
                         date.setDate(date.getDate() + i - date.getDay());
-                        const availability = checkAvailabilityForDate(date);
-                        const isAvailable = availability && availability.status === "open";
+                        const dayAppointments = getAppointmentsForDate(date);
+                        const hasAppointments = dayAppointments.length > 0;
                         
                         return (
                           <button
@@ -378,13 +371,13 @@ const AdvocateDashboard = () => {
                             className={`p-1 lg:p-2 rounded-lg text-center text-xs lg:text-sm ${
                               selectedDate.toDateString() === date.toDateString() 
                                 ? 'bg-blue-100 text-blue-800 font-medium' 
-                                : isAvailable 
+                                : hasAppointments 
                                   ? 'hover:bg-blue-50' 
                                   : 'opacity-50'
                             }`}
                           >
                             {date.getDate()}
-                            {isAvailable ? (
+                            {hasAppointments ? (
                               <div className="w-1 h-1 bg-blue-500 rounded-full mx-auto mt-1"></div>
                             ) : (
                               <div className="w-1 h-1 bg-transparent mx-auto mt-1"></div>
@@ -395,99 +388,40 @@ const AdvocateDashboard = () => {
                     </div>
                   </div>
                   
-                  {/* Availability Form and Details */}
+                  {/* Appointment Details */}
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Set Availability</h3>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Appointments for {selectedDate.toDateString()}</h3>
                     <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-                      <form onSubmit={handleAvailabilitySubmit}>
-                        <div className="mb-4">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                          <select 
-                            name="status"
-                            className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            defaultValue={checkAvailabilityForDate(selectedDate)?.status || 'open'}
+                      {(() => {
+                        const dayAppointments = getAppointmentsForDate(selectedDate);
+                        if (dayAppointments.length === 0) {
+                          return (
+                            <div className="p-4 bg-gray-50 rounded-lg">
+                              <p className="text-gray-500 text-sm">No appointments scheduled for this date.</p>
+                            </div>
+                          );
+                        }
+                        return dayAppointments.map((appointment, index) => (
+                          <div 
+                            key={index} 
+                            className={`p-4 mb-2 rounded-lg border ${
+                              appointment.status === 'confirmed' 
+                                ? 'bg-green-50 border-green-100' 
+                                : appointment.status === 'pending' 
+                                  ? 'bg-yellow-50 border-yellow-100' 
+                                  : 'bg-red-50 border-red-100'
+                            }`}
                           >
-                            <option value="open">Open</option>
-                            <option value="closed">Closed</option>
-                          </select>
-                        </div>
-                        <div className="mb-4">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-                          <input 
-                            type="time" 
-                            name="startTime"
-                            defaultValue={checkAvailabilityForDate(selectedDate)?.hours?.start || ''}
-                            className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                        </div>
-                        <div className="mb-4">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-                          <input 
-                            type="time" 
-                            name="endTime"
-                            defaultValue={checkAvailabilityForDate(selectedDate)?.hours?.end || ''}
-                            className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                        </div>
-                        <div className="mb-4">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Reason (if closed)</label>
-                          <input 
-                            type="text" 
-                            name="reason"
-                            defaultValue={checkAvailabilityForDate(selectedDate)?.reason || ''}
-                            className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="e.g., University Holiday"
-                          />
-                        </div>
-                        <button 
-                          type="submit"
-                          className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                        >
-                          Save Availability
-                        </button>
-                      </form>
-                    </div>
-
-                    <h3 className="text-lg font-semibold text-gray-800 mt-6 mb-4">Availability Details</h3>
-                    {(() => {
-                      const availability = checkAvailabilityForDate(selectedDate);
-                      const dateStr = selectedDate.toISOString().split('T')[0];
-                      const todayStr = new Date().toISOString().split('T')[0];
-
-                      if (!availability) {
-                        return (
-                          <div className="p-4 bg-gray-50 rounded-lg">
-                            <p className="text-gray-500 text-sm">No availability set for this date</p>
-                          </div>
-                        );
-                      }
-
-                      if (availability.status === "closed") {
-                        return (
-                          <div className="p-4 bg-red-50 rounded-lg border border-red-100">
-                            <h4 className="font-medium text-red-800 mb-1">Guidance Office Closed</h4>
-                            <p className="text-gray-700 text-sm">{availability.reason || "Not available"}</p>
-                            {dateStr === todayStr && (
-                              <p className="mt-2 text-sm text-red-600">The office is not open today</p>
-                            )}
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <div className="p-4 bg-green-50 rounded-lg border border-green-100">
-                          <h4 className="font-medium text-green-800 mb-1">Guidance Office Open</h4>
-                          <p className="text-gray-700 text-sm">
-                            Hours: {availability.hours.start} - {availability.hours.end}
-                          </p>
-                          {dateStr === todayStr && (
-                            <p className="mt-2 text-sm text-green-600">
-                              The office is currently open until {availability.hours.end}
+                            <h4 className="font-medium text-gray-800">{appointment.student}</h4>
+                            <p className="text-sm text-gray-600">Time: {appointment.time}</p>
+                            <p className="text-sm text-gray-600">Purpose: {appointment.purpose}</p>
+                            <p className="text-sm text-gray-600">
+                              Status: {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
                             </p>
-                          )}
-                        </div>
-                      );
-                    })()}
+                          </div>
+                        ));
+                      })()}
+                    </div>
                   </div>
                 </div>
               </div>

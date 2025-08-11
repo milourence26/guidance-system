@@ -30,6 +30,7 @@ export default function Login() {
         localStorage.setItem('usertype', data.usertype);
         localStorage.setItem('firstName', data.firstName);
         localStorage.setItem('lastName', data.lastName);
+        localStorage.setItem('userId', data.userId);
 
         if (data.usertype === 'admin') {
           router.push('/admin-dashboard');

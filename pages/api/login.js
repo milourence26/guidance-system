@@ -34,7 +34,8 @@ export default async function handler(req, res) {
       success: true,
       usertype: user.usertype,
       firstName: user.first_name,
-      lastName: user.last_name
+      lastName: user.last_name,
+      userId: user.id 
     });
   } catch (error) {
     console.error('Login error:', error);
