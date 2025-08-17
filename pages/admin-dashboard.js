@@ -1,19 +1,17 @@
-//pages/admin-dashboard.js
+// pages/admin-dashboard.js
 import { useState, useEffect } from "react";
 import { useRouter } from 'next/router';
 import {
-  FiMenu, FiGrid, FiUsers, FiFileText, FiUser, FiLogOut, FiChevronDown,FiSave,
+  FiMenu, FiGrid, FiUsers, FiFileText, FiUser, FiLogOut, FiChevronDown, FiSave,
   FiChevronRight, FiBook, FiAward, FiHome, FiCalendar, FiClock, FiSettings,
   FiBell, FiSearch, FiBarChart, FiTrendingUp, FiUserCheck, FiPlus, FiEdit, FiTrash2
 } from "react-icons/fi";
 import BasicEdForm from '../components/Basic-ed/BasicEdForm';
-
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-const FAMILY_INCOME_RANGES = ['Below ₱10,000.00', '₱10,001 - ₱15,000', '₱15,001 - ₱20,000', '₱20,001 - ₱25,000', '₱25,001 - ₱30,000', 'Above ₱30,000'];
-const RELATIONSHIP_OPTIONS = ['sister/brother', 'aunt/uncle', 'land lord/lady', 'grandparents', 'other'];
+import SeniorHighSchoolForm from '../components/Senior-high/SeniorHighForm';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("Dashboard");
+  const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isPdsDropdownOpen, setIsPdsDropdownOpen] = useState(false);
@@ -89,77 +87,6 @@ export default function AdminDashboard() {
     parentSignatureName: '',
     parentSignatureDate: '',
   });
-  const [errors, setErrors] = useState({});
-  const [students, setStudents] = useState([]);
-  const [editingStudentId, setEditingStudentId] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const studentsPerPage = 10;
-  const router = useRouter();
-
-  const initialStudentState = {
-    studentType: 'New',
-    studentPhotoUrl: '',
-    lastName: '',
-    givenName: '',
-    middleName: '',
-    suffix: '',
-    gender: '',
-    citizenship: '',
-    age: '',
-    address: '',
-    birthMonth: '',
-    birthDay: '',
-    birthYear: '',
-    birthPlace: '',
-    contactNumber: '',
-    religion: '',
-    baptism: { received: false, date: '', church: '' },
-    firstCommunion: { received: false, date: '', church: '' },
-    confirmation: { received: false, date: '', church: '' },
-    fatherName: '',
-    fatherOccupation: '',
-    fatherStatus: '',
-    fatherEducation: '',
-    motherName: '',
-    motherOccupation: '',
-    motherStatus: '',
-    motherEducation: '',
-    parentsMaritalStatus: '',
-    residenceType: '',
-    languagesSpoken: '',
-    familyIncome: '',
-    financialSupport: [],
-    otherFinancialSupport: '',
-    leisureActivities: [],
-    otherLeisureActivities: '',
-    specialInterests: '',
-    livingWithParents: true,
-    guardianName: '',
-    guardianRelation: '',
-    otherGuardianRelation: '',
-    guardianAddress: '',
-    siblings: Array(4).fill().map(() => ({ name: '', age: '', school: '', status: '', occupation: '' })),
-    educationBackground: {
-      preschool: { school: '', awards: '', year: '' },
-      gradeSchool: { school: '', awards: '', year: '' },
-      highSchool: { school: '', awards: '', year: '' },
-    },
-    organizations: Array(4).fill().map(() => ({ year: '', organization: '', designation: '' })),
-    healthProblem: 'No',
-    healthProblemDetails: '',
-    generalCondition: '',
-    underMedication: 'No',
-    medicationDetails: '',
-    specialCare: 'No',
-    specialCareDetails: '',
-    lastDoctorVisit: '',
-    doctorVisitReason: '',
-    testResults: Array(3).fill().map(() => ({ test: '', date: '', rating: '' })),
-    signatureName: '',
-    signatureDate: '',
-    parentSignatureName: '',
-    parentSignatureDate: '',
-  };
 
   useEffect(() => {
     const storedFirstName = localStorage.getItem('firstName') || 'Dr. Maria';
@@ -168,36 +95,6 @@ export default function AdminDashboard() {
     setLastName(storedLastName);
   }, []);
 
-  useEffect(() => {
-    if (activeTab === "PDS - Basic Education") {
-      fetchStudents();
-    }
-  }, [activeTab, currentPage]);
-
-  const fetchStudents = async () => {
-    try {
-      const response = await fetch(`/api/admin/BasicEdStudents?page=${currentPage}&limit=${studentsPerPage}`);
-      if (!response.ok) {
-        let errorMessage = 'Failed to fetch students';
-        if (response.status === 404) {
-          errorMessage = 'Student data endpoint not found';
-        } else if (response.headers.get('content-type')?.includes('application/json')) {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorMessage;
-        } else {
-          const text = await response.text();
-          console.error('Non-JSON response:', text);
-          errorMessage = 'Server returned an unexpected response';
-        }
-        throw new Error(errorMessage);
-      }
-      const data = await response.json();
-      setStudents(data);
-    } catch (error) {
-      console.error('Error fetching students:', error);
-      setErrors({ general: error.message });
-    }
-  };
 
   const handleLogout = async () => {
     try {
@@ -217,218 +114,12 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewStudent({ ...newStudent, [name]: value });
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: '' });
-    }
-  };
-
-  const handleSacramentChange = (sacrament, field, value) => {
-    setNewStudent({
-      ...newStudent,
-      [sacrament]: { ...newStudent[sacrament], [field]: value },
-    });
-  };
-
-  const handleSiblingChange = (index, field, value) => {
-    const updatedSiblings = [...newStudent.siblings];
-    updatedSiblings[index] = { ...updatedSiblings[index], [field]: value };
-    setNewStudent({ ...newStudent, siblings: updatedSiblings });
-  };
-
-  const handleEducationChange = (level, field, value) => {
-    setNewStudent({
-      ...newStudent,
-      educationBackground: {
-        ...newStudent.educationBackground,
-        [level]: {
-          ...newStudent.educationBackground[level],
-          [field]: value,
-        },
-      },
-    });
-  };
-
-  const handleOrganizationChange = (index, field, value) => {
-    const updatedOrganizations = [...newStudent.organizations];
-    updatedOrganizations[index] = { ...updatedOrganizations[index], [field]: value };
-    setNewStudent({ ...newStudent, organizations: updatedOrganizations });
-  };
-
-  const handleTestResultChange = (index, field, value) => {
-    const updatedTestResults = [...newStudent.testResults];
-    updatedTestResults[index] = { ...updatedTestResults[index], [field]: value };
-    setNewStudent({ ...newStudent, testResults: updatedTestResults });
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-    if (!newStudent.lastName) newErrors.lastName = 'Last Name is required';
-    if (!newStudent.givenName) newErrors.givenName = 'Given Name is required';
-    return newErrors;
-  };
-
-  const handleAddStudent = async () => {
-    const validationErrors = validateForm();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-
-    try {
-      const birthDate = newStudent.birthYear && newStudent.birthMonth && newStudent.birthDay
-        ? `${newStudent.birthYear}-${MONTHS.indexOf(newStudent.birthMonth) + 1}-${newStudent.birthDay.padStart(2, '0')}`
-        : null;
-
-      const studentData = {
-        ...newStudent,
-        birth_date: birthDate,
-      };
-
-      const response = await fetch('/api/admin/BasicEdStudents', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(studentData),
-      });
-
-      if (!response.ok) {
-        let errorMessage = 'Failed to save student';
-        if (response.headers.get('content-type')?.includes('application/json')) {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorMessage;
-        } else {
-          const text = await response.text();
-          console.error('Non-JSON response:', text);
-          errorMessage = 'Server returned an unexpected response';
-        }
-        throw new Error(errorMessage);
-      }
-      setShowModal(false);
-      setNewStudent(initialStudentState);
-      setErrors({});
-      fetchStudents();
-    } catch (error) {
-      console.error('Error saving student:', error);
-      setErrors({ general: error.message });
-    }
-  };
-
-  const handleEditStudent = async (id) => {
-    try {
-      const response = await fetch(`/api/admin/BasicEdStudents/${id}`);
-      if (!response.ok) {
-        let errorMessage = 'Failed to fetch student';
-        if (response.headers.get('content-type')?.includes('application/json')) {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorMessage;
-        } else {
-          const text = await response.text();
-          console.error('Non-JSON response:', text);
-          errorMessage = 'Server returned an unexpected response';
-        }
-        throw new Error(errorMessage);
-      }
-      const student = await response.json();
-      setNewStudent({
-        ...student,
-        studentType: student.student_type,
-        birthMonth: student.birth_date ? MONTHS[new Date(student.birth_date).getMonth()] : '',
-        birthDay: student.birth_date ? new Date(student.birth_date).getDate().toString() : '',
-        birthYear: student.birth_date ? new Date(student.birth_date).getFullYear().toString() : '',
-      });
-      setEditingStudentId(id);
-      setShowModal(true);
-    } catch (error) {
-      console.error('Error fetching student:', error);
-      setErrors({ general: error.message });
-    }
-  };
-
-  const handleUpdateStudent = async () => {
-    const validationErrors = validateForm();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-
-    try {
-      const birthDate = newStudent.birthYear && newStudent.birthMonth && newStudent.birthDay
-        ? `${newStudent.birthYear}-${MONTHS.indexOf(newStudent.birthMonth) + 1}-${newStudent.birthDay.padStart(2, '0')}`
-        : null;
-
-      const studentData = {
-        ...newStudent,
-        birth_date: birthDate,
-      };
-
-      const response = await fetch(`/api/admin/BasicEdStudents/${editingStudentId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(studentData),
-      });
-
-      if (!response.ok) {
-        let errorMessage = 'Failed to update student';
-        if (response.headers.get('content-type')?.includes('application/json')) {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorMessage;
-        } else {
-          const text = await response.text();
-          console.error('Non-JSON response:', text);
-          errorMessage = 'Server returned an unexpected response';
-        }
-        throw new Error(errorMessage);
-      }
-      setShowModal(false);
-      setNewStudent(initialStudentState);
-      setEditingStudentId(null);
-      setErrors({});
-      fetchStudents();
-    } catch (error) {
-      console.error('Error updating student:', error);
-      setErrors({ general: error.message });
-    }
-  };
-
-  const handleDeleteStudent = async (id) => {
-    if (!confirm('Are you sure you want to delete this student?')) return;
-    try {
-      const response = await fetch(`/api/admin/BasicEdStudents/${id}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) {
-        let errorMessage = 'Failed to delete student';
-        if (response.headers.get('content-type')?.includes('application/json')) {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorMessage;
-        } else {
-          const text = await response.text();
-          console.error('Non-JSON response:', text);
-          errorMessage = 'Server returned an unexpected response';
-        }
-        throw new Error(errorMessage);
-      }
-      fetchStudents();
-    } catch (error) {
-      console.error('Error deleting student:', error);
-      setErrors({ general: error.message });
-    }
-  };
-
   const stats = [
-    { title: "Total Students", value: students.length.toString(), change: "+12%", icon: FiUsers, color: "bg-blue-500" },
-    { title: "Pending Forms", value: "23", change: "-5%", icon: FiFileText, color: "bg-orange-500" },
-    { title: "Completed Sessions", value: "186", change: "+8%", icon: FiUserCheck, color: "bg-green-500" },
-    { title: "This Month", value: "45", change: "+15%", icon: FiTrendingUp, color: "bg-purple-500" },
+    { title: "Total Students", value: "0", change: "+0%", icon: FiUsers, color: "bg-blue-500" },
+    { title: "Pending Forms", value: "0", change: "+0%", icon: FiFileText, color: "bg-orange-500" },
+    { title: "Completed Sessions", value: "0", change: "+0%", icon: FiUserCheck, color: "bg-green-500" },
+    { title: "This Month", value: "0", change: "+0%", icon: FiTrendingUp, color: "bg-purple-500" },
   ];
-
-  const totalPages = Math.ceil(students.length / studentsPerPage);
-  const paginatedStudents = students.slice(
-    (currentPage - 1) * studentsPerPage,
-    currentPage * studentsPerPage
-  );
 
   const fullname = `${firstName} ${lastName}`;
 
@@ -472,8 +163,8 @@ export default function AdminDashboard() {
               onClick={() => setIsPdsDropdownOpen(!isPdsDropdownOpen)}
             >
               <div className="flex items-center space-x-3">
-                <FiUser size={20} className="flex-shrink-0" />
-                {isSidebarOpen && <span className="font-medium text-black">Personal Data Sheet</span>}
+                <FiUser size={20} className="flex-shrink-0 text-gray-700" />
+                {isSidebarOpen && <span className="font-medium text-gray-700">Personal Data Sheet</span>}
               </div>
               {isSidebarOpen && (
                 <div className={`transition-transform duration-200 ${isPdsDropdownOpen ? "rotate-180" : ""}`}>
@@ -569,11 +260,6 @@ export default function AdminDashboard() {
         </header>
 
         <div className="p-6">
-          {errors.general && (
-            <div className="bg-red-100 text-red-700 p-3 rounded-md mb-4">
-              {errors.general}
-            </div>
-          )}
           {activeTab === "Dashboard" && <Dashboard stats={stats} />}
           {activeTab === "Availability Schedule" && <AvailabilitySchedule selectedDate={selectedDate} setSelectedDate={setSelectedDate} availabilityHours={availabilityHours} setAvailabilityHours={setAvailabilityHours} />}
           {activeTab === "Manage Users" && <ManageUsers />}
@@ -581,33 +267,7 @@ export default function AdminDashboard() {
           {activeTab === "Reports" && <Reports />}
           {activeTab === "Logs" && <Logs />}
           {activeTab.startsWith("PDS") && (
-            <PersonalDataSheet 
-              type={activeTab.replace("PDS - ", "")} 
-              showModal={showModal} 
-              setShowModal={setShowModal} 
-              newStudent={newStudent} 
-              setNewStudent={setNewStudent} 
-              errors={errors} 
-              setErrors={setErrors} 
-              handleInputChange={handleInputChange}
-              handleSacramentChange={handleSacramentChange}
-              handleSiblingChange={handleSiblingChange}
-              handleEducationChange={handleEducationChange}
-              handleOrganizationChange={handleOrganizationChange}
-              handleTestResultChange={handleTestResultChange}
-              handleAddStudent={handleAddStudent}
-              handleEditStudent={handleEditStudent}
-              handleUpdateStudent={handleUpdateStudent}
-              handleDeleteStudent={handleDeleteStudent}
-              initialStudentState={initialStudentState}
-              students={students}
-              editingStudentId={editingStudentId}
-              setEditingStudentId={setEditingStudentId}
-              currentPage={currentPage}
-              setCurrentPage={setCurrentPage}
-              totalPages={totalPages}
-              paginatedStudents={paginatedStudents}
-            />
+            <PersonalDataSheet type={activeTab.replace("PDS - ", "")} />
           )}
         </div>
       </main>
@@ -1602,161 +1262,28 @@ function Logs() {
   );
 }
 
-function PersonalDataSheet({ 
-  type, 
-  showModal, 
-  setShowModal, 
-  newStudent, 
-  setNewStudent, 
-  errors, 
-  setErrors, 
-  handleInputChange, 
-  handleSacramentChange, 
-  handleSiblingChange, 
-  handleEducationChange, 
-  handleOrganizationChange, 
-  handleTestResultChange, 
-  handleAddStudent, 
-  handleEditStudent,
-  handleUpdateStudent,
-  handleDeleteStudent,
-  initialStudentState,
-  students,
-  editingStudentId,
-  setEditingStudentId,
-  currentPage,
-  setCurrentPage,
-  totalPages,
-  paginatedStudents
-}) {
+function PersonalDataSheet({ type }) {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold text-gray-800">Personal Data Sheet - {type}</h3>
-        <button
-          onClick={() => {
-            setShowModal(true);
-            setNewStudent(initialStudentState);
-            setEditingStudentId(null);
-          }}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-sm"
-        >
-          <FiPlus size={16} />
-          Add New Student
-        </button>
       </div>
 
       {type === "Basic Education" && (
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <h4 className="text-md font-semibold text-gray-800 mb-4">Student List</h4>
-          {paginatedStudents.length === 0 ? (
-            <p className="text-gray-500 text-sm">No students found.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50 sticky top-0 z-10">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Type</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Birth Date</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {paginatedStudents.map((student) => (
-                    <tr key={student.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.id}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{`${student.given_name} ${student.last_name}`}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.student_type}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.gender}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.age}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {student.birth_date ? new Date(student.birth_date).toLocaleDateString() : '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={() => handleEditStudent(student.id)}
-                          className="text-blue-600 hover:text-blue-800 mr-4 transition-colors"
-                          title="Edit"
-                        >
-                          <FiEdit size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteStudent(student.id)}
-                          className="text-red-600 hover:text-red-800 transition-colors"
-                          title="Delete"
-                        >
-                          <FiTrash2 size={16} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          {totalPages > 1 && (
-            <div className="mt-4 flex justify-between items-center">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  currentPage === 1
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
-                }`}
-              >
-                Previous
-              </button>
-              <span className="text-sm text-gray-600">
-                Page {currentPage} of {totalPages}
-              </span>
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                disabled={currentPage === totalPages}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  currentPage === totalPages
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
-                }`}
-              >
-                Next
-              </button>
-            </div>
-          )}
-          <div className="mt-6">
-            <BasicEdForm
-              showModal={showModal}
-              setShowModal={setShowModal}
-              newStudent={newStudent}
-              setNewStudent={setNewStudent}
-              errors={errors}
-              setErrors={setErrors}
-              handleInputChange={handleInputChange}
-              handleSacramentChange={handleSacramentChange}
-              handleSiblingChange={handleSiblingChange}
-              handleEducationChange={handleEducationChange}
-              handleOrganizationChange={handleOrganizationChange}
-              handleTestResultChange={handleTestResultChange}
-              handleAddStudent={handleAddStudent}
-              handleEditStudent={handleEditStudent}
-              handleUpdateStudent={handleUpdateStudent}
-              handleDeleteStudent={handleDeleteStudent}
-              initialStudentState={initialStudentState}
-              students={students}
-              editingStudentId={editingStudentId}
-              setEditingStudentId={setEditingStudentId}
-            />
-          </div>
+          <BasicEdForm />
         </div>
       )}
 
-      {type !== "Basic Education" && (
+      {type === "Senior High School" && (
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <p className="text-gray-600">Personal Data Sheet for {type} will be implemented here.</p>
+          <SeniorHighSchoolForm />
+        </div>
+      )}
+
+      {type === "Higher Education" && (
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <HigherEdForm />
         </div>
       )}
     </div>
