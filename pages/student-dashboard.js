@@ -5,6 +5,8 @@ import {
   FiLogOut, FiMenu, FiUser
 } from "react-icons/fi";
 import StudentPDSModal from '../components/StudentPDSModal';
+import StudentPDSViewModal from '../components/StudentPDSViewModal';
+import StudentPDSUpdateModal from '../components/StudentPDSUpdateModal';
 
 export default function StudentDashboard() {
   const [activeTab, setActiveTab] = useState('Dashboard');
@@ -201,7 +203,15 @@ export default function StudentDashboard() {
 
         <div className="flex-1 overflow-y-auto p-6">
           {activeTab === 'Dashboard' && <Dashboard appointments={appointments} firstName={firstName} setActiveTab={setActiveTab} />}
-          {activeTab === 'Student Forms' && <Forms showModal={showModal} setShowModal={setShowModal} onAddStudent={handleAddStudent} formStatus={formStatus} />}
+          {activeTab === 'Student Forms' && (
+  <Forms 
+    showModal={showModal} 
+    setShowModal={setShowModal} 
+    onAddStudent={handleAddStudent} 
+    formStatus={formStatus}
+    setFormStatus={setFormStatus} // Add this line
+  />
+)}
           {activeTab === 'Appointments' && <Appointments />}
         </div>
       </div>
@@ -269,21 +279,258 @@ function Dashboard({ appointments, firstName, setActiveTab }) {
   );
 }
 
-function Forms({ showModal, setShowModal, onAddStudent, formStatus }) {
+function Forms({ formStatus, setFormStatus, showModal, setShowModal, onAddStudent }) {
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [studentData, setStudentData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch student data when component mounts
+  useEffect(() => {
+    const fetchStudentData = async () => {
+      try {
+        setIsLoading(true);
+        const userId = localStorage.getItem('userId');
+        
+        if (!userId) {
+          setError('User ID not found. Please log in again.');
+          setIsLoading(false);
+          return;
+        }
+
+        const response = await fetch(`/api/students?userId=${userId}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          setStudentData(data);
+          
+          // Update form status based on whether data exists
+          if (data && data.id) {
+            setFormStatus('Submitted');
+          } else {
+            setFormStatus('Pending');
+          }
+        } else if (response.status === 404) {
+          // No student data found, which is normal for new users
+          setFormStatus('Pending');
+        } else {
+          setError('Failed to fetch student data');
+        }
+      } catch (error) {
+        console.error('Error fetching student data:', error);
+        setError('Error fetching student data. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStudentData();
+  }, [setFormStatus]);
+
+  const handleViewForm = async () => {
+    if (!studentData) {
+      // If no data in state, try to fetch it again
+      setIsLoading(true);
+      try {
+        const userId = localStorage.getItem('userId');
+        const response = await fetch(`/api/students?userId=${userId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setStudentData(data);
+          setShowViewModal(true);
+        }
+      } catch (error) {
+        console.error('Error fetching student data:', error);
+        setError('Error fetching student data. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      setShowViewModal(true);
+    }
+  };
+
+  const handleUpdateForm = async () => {
+    if (!studentData) {
+      // If no data in state, try to fetch it again
+      setIsLoading(true);
+      try {
+        const userId = localStorage.getItem('userId');
+        const response = await fetch(`/api/students?userId=${userId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setStudentData(data);
+          setShowUpdateModal(true);
+        }
+      } catch (error) {
+        console.error('Error fetching student data:', error);
+        setError('Error fetching student data. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      setShowUpdateModal(true);
+    }
+  };
+
+const handleUpdateStudent = async (updatedStudent) => {
+  setFormStatus('Submitted');
+  
+  // Refresh the student data after successful update
+  try {
+    const userId = localStorage.getItem('userId');
+    const response = await fetch(`/api/students?userId=${userId}`);
+    if (response.ok) {
+      const data = await response.json();
+      setStudentData(data);
+    }
+  } catch (error) {
+    console.error('Error fetching student data after update:', error);
+  }
+};
+
+  const handleAddStudentSuccess = (newStudent) => {
+    onAddStudent(newStudent);
+    setFormStatus('Submitted');
+    // Refresh the student data after successful submission
+    const fetchData = async () => {
+      try {
+        const userId = localStorage.getItem('userId');
+        const response = await fetch(`/api/students?userId=${userId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setStudentData(data);
+        }
+      } catch (error) {
+        console.error('Error fetching student data after update:', error);
+      }
+    };
+    fetchData();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className="flex justify-center items-center py-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-gray-600">Loading your form data...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <FiAlertCircle className="w-5 h-5 text-red-600 mr-3" />
+            <h3 className="text-red-800 font-medium">Error</h3>
+          </div>
+          <p className="text-red-700 mt-1">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm transition"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
       <h2 className="text-xl font-bold text-gray-800 mb-4">Student Forms</h2>
       <p className="text-gray-600 mb-6">Complete or update your Personal Data Sheet (PDS) for the current academic year.</p>
+      
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-2">Form Status: {formStatus}</h3>
-        <button
-          onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm transition"
-        >
-          {formStatus === 'Pending' ? 'Complete PDS Form' : 'Update PDS Form'}
-        </button>
+        <h3 className="text-lg font-semibold text-gray-800 mb-2">Form Status: 
+          <span className={`ml-2 ${formStatus === 'Submitted' ? 'text-green-600' : 'text-yellow-600'}`}>
+            {formStatus}
+          </span>
+        </h3>
+        
+        {formStatus === 'Submitted' && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-3">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-green-800">Your form has been submitted successfully!</p>
+            </div>
+            <p className="text-green-700 text-sm mt-1">
+              You can view or update your information at any time.
+            </p>
+          </div>
+        )}
+        
+        <div className="flex flex-wrap gap-3 mt-4">
+          {formStatus === 'Pending' ? (
+            <button
+              onClick={() => setShowModal(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm transition flex items-center"
+            >
+              <FiFileText className="mr-2" />
+              Complete PDS Form
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={handleViewForm}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm transition flex items-center"
+              >
+                <FiUser className="mr-2" />
+                View PDS Form
+              </button>
+              <button
+                onClick={handleUpdateForm}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm transition flex items-center"
+              >
+                <FiFileText className="mr-2" />
+                Update PDS Form
+              </button>
+            </>
+          )}
+        </div>
       </div>
-      <StudentPDSModal showModal={showModal} setShowModal={setShowModal} onAddStudent={onAddStudent} />
+      
+      {/* Additional helpful information */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h4 className="text-blue-800 font-medium mb-2 flex items-center">
+          <FiAlertCircle className="mr-2" />
+          Important Information
+        </h4>
+        <ul className="text-blue-700 text-sm list-disc list-inside space-y-1">
+          <li>Please ensure all information is accurate and up-to-date</li>
+          <li>You can update your form at any time if your information changes</li>
+          <li>Contact the guidance office if you need assistance</li>
+        </ul>
+      </div>
+      
+      {/* View Modal */}
+      <StudentPDSViewModal 
+        showModal={showViewModal}
+        setShowModal={setShowViewModal}
+        studentData={studentData}
+        educationLevel={studentData?.education_level}
+      />
+      
+      {/* Update Modal */}
+      <StudentPDSUpdateModal 
+        showModal={showUpdateModal}
+        setShowModal={setShowUpdateModal}
+        studentData={studentData}
+        onUpdateStudent={handleUpdateStudent}
+      />
+      
+      {/* Create Modal */}
+      <StudentPDSModal 
+        showModal={showModal}
+        setShowModal={setShowModal}
+        onAddStudent={handleAddStudentSuccess}
+      />
     </div>
   );
 }

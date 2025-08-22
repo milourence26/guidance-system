@@ -1,0 +1,460 @@
+// pages/api/students/[id].js
+import pool from '@/lib/db';
+
+// Helper function to normalize empty values to null
+function normalizeEmptyToNull(obj) {
+  if (!obj) return obj;
+  const result = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value === "" || value === undefined) {
+      result[key] = null;
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
+export default async function handler(req, res) {
+  const {
+    query: { id },
+    method,
+  } = req;
+
+  const client = await pool.connect();
+
+  try {
+    switch (method) {
+      case 'GET':
+        // Get student data by ID
+        const studentQuery = `
+          SELECT * FROM pds_students WHERE id = $1
+        `;
+        const studentResult = await client.query(studentQuery, [id]);
+        
+        if (studentResult.rows.length === 0) {
+          return res.status(404).json({ message: 'Student not found' });
+        }
+        
+        const student = studentResult.rows[0];
+        const studentId = student.id;
+        
+        // Get related data from other tables
+        const [
+          familyInfo,
+          parents,
+          sacraments,
+          leisureActivities,
+          guardian,
+          siblings,
+          educationalBackground,
+          organizations,
+          healthInfo,
+          testResults
+        ] = await Promise.all([
+          client.query('SELECT * FROM family_info WHERE student_id = $1', [studentId]),
+          client.query('SELECT * FROM parents WHERE student_id = $1', [studentId]),
+          client.query('SELECT * FROM sacraments WHERE student_id = $1', [studentId]),
+          client.query('SELECT * FROM leisure_activities WHERE student_id = $1', [studentId]),
+          client.query('SELECT * FROM if_not_with_parents WHERE student_id = $1', [studentId]),
+          client.query('SELECT * FROM siblings WHERE student_id = $1', [studentId]),
+          client.query('SELECT * FROM educational_background WHERE student_id = $1', [studentId]),
+          client.query('SELECT * FROM organizations WHERE student_id = $1', [studentId]),
+          client.query('SELECT * FROM health_info WHERE student_id = $1', [studentId]),
+          client.query('SELECT * FROM test_results WHERE student_id = $1', [studentId])
+        ]);
+        
+        // Separate father and mother data - use different variable names
+        const fatherFromDB = parents.rows.filter(p => p.parent_type === 'father');
+        const motherFromDB = parents.rows.filter(p => p.parent_type === 'mother');
+        
+        // Combine all data
+        const studentData = {
+          ...student,
+          family_info: familyInfo.rows,
+          father: fatherFromDB,
+          mother: motherFromDB,
+          sacraments: sacraments.rows,
+          leisure_activities: leisureActivities.rows,
+          guardian: guardian.rows,
+          siblings: siblings.rows,
+          educational_background: educationalBackground.rows,
+          organizations: organizations.rows,
+          health_info: healthInfo.rows,
+          test_results: testResults.rows
+        };
+        
+        res.status(200).json(studentData);
+        break;
+
+      case 'PUT':
+        // Update student data
+        const normalizedBody = normalizeEmptyToNull(req.body);
+        const {
+          educationLevel,
+          schoolYear,
+          semester,
+          gradeLevel,
+          strand,
+          course,
+          yearLevel,
+          firstName,
+          lastName,
+          middleName,
+          nickname,
+          sex,
+          civil_status,
+          nationality,
+          contact_number,
+          email,
+          address,
+          city_address,
+          birth_date,
+          birth_place,
+          age,
+          religion,
+          emergency_contact,
+          emergency_relation,
+          emergency_number,
+          signature_name,
+          signature_date,
+          parent_signature_name,
+          parent_signature_date,
+          student_photo_url,
+          residence_type,
+          residence_owner,
+          languages_spoken_at_home,
+          special_talents,
+          living_with_parents,
+          studentType,
+          parentsMaritalStatus,
+          child_residing_with,
+          child_residence_other,
+          birth_order,
+          siblings_count,
+          brothers_count,
+          sisters_count,
+          step_brothers_count,
+          step_sisters_count,
+          adopted_count,
+          family_monthly_income,
+          financial_support,
+          relatives_at_home,
+          other_relatives,
+          total_relatives,
+          father: fatherData,
+          mother: motherData,
+          baptism,
+          firstCommunion,
+          confirmation,
+          leisureActivities: leisureActivitiesData,
+          otherLeisureActivity,
+          guardianName,
+          guardianRelationship,
+          guardianAddress,
+          siblings: siblingsData,
+          preschool,
+          elementary,
+          highSchool,
+          seniorHigh,
+          organizations: organizationsData,
+          height,
+          weight,
+          physicalCondition,
+          health_problem,
+          health_problem_details,
+          last_doctor_visit,
+          last_doctor_visit_reason,
+          general_condition,
+          testResults: testResultsData
+        } = normalizedBody;
+
+        await client.query('BEGIN');
+
+        // 1. Update pds_students table
+        const studentUpdateQuery = `
+          UPDATE pds_students SET
+            education_level = $1, school_year = $2, semester = $3, grade_level = $4, strand = $5,
+            course = $6, year_level = $7, student_type = $8, first_name = $9, last_name = $10,
+            middle_name = $11, nickname = $12, sex = $13, civil_status = $14, nationality = $15,
+            contact_number = $16, email = $17, address = $18, city_address = $19, birth_date = $20,
+            birth_place = $21, age = $22, religion = $23, emergency_contact = $24, emergency_relation = $25,
+            emergency_number = $26, signature_name = $27, signature_date = $28, parent_signature_name = $29,
+            parent_signature_date = $30, student_photo_url = $31, residence_type = $32, residence_owner = $33,
+            languages_spoken_at_home = $34, special_talents = $35, living_with_parents = $36, updated_at = CURRENT_TIMESTAMP
+          WHERE id = $37
+        `;
+
+        const studentUpdateValues = [
+          educationLevel, schoolYear, semester, gradeLevel, strand, course,
+          yearLevel, studentType, firstName, lastName, middleName, nickname, sex, civil_status,
+          nationality, contact_number, email, address, city_address, birth_date, birth_place,
+          age, religion, emergency_contact, emergency_relation, emergency_number,
+          signature_name, signature_date, parent_signature_name, parent_signature_date,
+          student_photo_url, residence_type, residence_owner, languages_spoken_at_home,
+          special_talents, living_with_parents, id
+        ];
+
+        await client.query(studentUpdateQuery, studentUpdateValues);
+
+        // 2. Delete existing related records
+        await Promise.all([
+          client.query('DELETE FROM family_info WHERE student_id = $1', [id]),
+          client.query('DELETE FROM parents WHERE student_id = $1', [id]),
+          client.query('DELETE FROM sacraments WHERE student_id = $1', [id]),
+          client.query('DELETE FROM leisure_activities WHERE student_id = $1', [id]),
+          client.query('DELETE FROM if_not_with_parents WHERE student_id = $1', [id]),
+          client.query('DELETE FROM siblings WHERE student_id = $1', [id]),
+          client.query('DELETE FROM educational_background WHERE student_id = $1', [id]),
+          client.query('DELETE FROM organizations WHERE student_id = $1', [id]),
+          client.query('DELETE FROM health_info WHERE student_id = $1', [id]),
+          client.query('DELETE FROM test_results WHERE student_id = $1', [id])
+        ]);
+
+        // 3. Re-insert related records
+        // Insert family information
+        if (parentsMaritalStatus || birth_order || siblings_count) {
+          const familyQuery = `
+            INSERT INTO family_info (
+              student_id, parents_marital_status, child_residing_with, child_residence_other,
+              birth_order, siblings_count, brothers_count, sisters_count, step_brothers_count,
+              step_sisters_count, adopted_count, family_monthly_income, relatives_at_home,
+              other_relatives, total_relatives, financial_support
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+          `;
+
+          const familyValues = [
+            id, parentsMaritalStatus, child_residing_with, child_residence_other,
+            birth_order, siblings_count, brothers_count, sisters_count, step_brothers_count,
+            step_sisters_count, adopted_count, family_monthly_income, 
+            Array.isArray(relatives_at_home) ? relatives_at_home.join(',') : relatives_at_home,
+            other_relatives, total_relatives, financial_support
+          ];
+
+          await client.query(familyQuery, familyValues);
+        }
+
+        // Insert parent information
+        if (fatherData && (fatherData.first_name || fatherData.last_name)) {
+          const fatherQuery = `
+            INSERT INTO parents (
+              student_id, parent_type, last_name, first_name, middle_name, occupation,
+              location, employment_type, status, highest_educational_attainment,
+              specialization, post_graduate_studies
+            ) VALUES ($1, 'father', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          `;
+
+          const fatherValues = [
+            id, 
+            fatherData.last_name || null, 
+            fatherData.first_name || null, 
+            fatherData.middle_name || null, 
+            fatherData.occupation || null,
+            fatherData.location || null, 
+            fatherData.employment_type || null, 
+            fatherData.status || null, 
+            fatherData.highest_educational_attainment || null,
+            fatherData.specialization || null, 
+            fatherData.post_graduate_studies || null
+          ];
+
+          await client.query(fatherQuery, fatherValues);
+        }
+
+        if (motherData && (motherData.first_name || motherData.last_name)) {
+          const motherQuery = `
+            INSERT INTO parents (
+              student_id, parent_type, last_name, first_name, middle_name, occupation,
+              location, employment_type, status, highest_educational_attainment,
+              specialization, post_graduate_studies
+            ) VALUES ($1, 'mother', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          `;
+
+          const motherValues = [
+            id, 
+            motherData.last_name || null, 
+            motherData.first_name || null, 
+            motherData.middle_name || null, 
+            motherData.occupation || null,
+            motherData.location || null, 
+            motherData.employment_type || null, 
+            motherData.status || null, 
+            motherData.highest_educational_attainment || null,
+            motherData.specialization || null, 
+            motherData.post_graduate_studies || null
+          ];
+
+          await client.query(motherQuery, motherValues);
+        }
+
+        // Insert sacraments - use different variable name
+        const sacramentRecords = [baptism, firstCommunion, confirmation];
+        for (const sacrament of sacramentRecords) {
+          if (sacrament && (sacrament.received || sacrament.date || sacrament.church)) {
+            const sacramentQuery = `
+              INSERT INTO sacraments (student_id, sacrament_type, received, date, church)
+              VALUES ($1, $2, $3, $4, $5)
+            `;
+            
+            await client.query(sacramentQuery, [
+              id, 
+              sacrament.sacrament_type || null, 
+              sacrament.received || false, 
+              sacrament.date || null, 
+              sacrament.church || null
+            ]);
+          }
+        }
+
+        // Insert leisure activities
+        if (leisureActivitiesData) {
+          const leisureQuery = `
+            INSERT INTO leisure_activities (student_id, activities, other_activity)
+            VALUES ($1, $2, $3)
+          `;
+          
+          await client.query(leisureQuery, [
+            id, 
+            Array.isArray(leisureActivitiesData) ? leisureActivitiesData.join(',') : leisureActivitiesData,
+            otherLeisureActivity || null
+          ]);
+        }
+
+        // Insert guardian information if not living with parents
+        if (!living_with_parents && guardianName) {
+          const guardianQuery = `
+            INSERT INTO if_not_with_parents (student_id, guardian_name, relationship, address)
+            VALUES ($1, $2, $3, $4)
+          `;
+          
+          await client.query(guardianQuery, [
+            id, 
+            guardianName || null, 
+            guardianRelationship || null, 
+            guardianAddress || null
+          ]);
+        }
+
+        // Insert siblings
+        if (siblingsData && siblingsData.length > 0) {
+          for (const sibling of siblingsData) {
+            if (sibling.name) {
+              const siblingQuery = `
+                INSERT INTO siblings (student_id, name, age, school, status, occupation)
+                VALUES ($1, $2, $3, $4, $5, $6)
+              `;
+              
+              await client.query(siblingQuery, [
+                id, 
+                sibling.name || null, 
+                sibling.age || null, 
+                sibling.school || null, 
+                sibling.status || null, 
+                sibling.occupation || null
+              ]);
+            }
+          }
+        }
+
+        // Insert educational background
+        const educationLevels = [
+          { level: 'Preschool', data: preschool },
+          { level: 'Grade School', data: elementary },
+          { level: 'High School', data: highSchool },
+          { level: 'Senior High School', data: seniorHigh }
+        ];
+
+        for (const edu of educationLevels) {
+          if (edu.data && (edu.data.school_attended_or_address || edu.data.awards_or_honors_received || edu.data.school_year_attended)) {
+            const eduQuery = `
+              INSERT INTO educational_background (student_id, level, school_attended_or_address, awards_or_honors_received, school_year_attended)
+              VALUES ($1, $2, $3, $4, $5)
+            `;
+            
+            await client.query(eduQuery, [
+              id, 
+              edu.level, 
+              edu.data.school_attended_or_address || null, 
+              edu.data.awards_or_honors_received || null, 
+              edu.data.school_year_attended || null
+            ]);
+          }
+        }
+
+        // Insert organizations
+        if (organizationsData && organizationsData.length > 0) {
+          for (const org of organizationsData) {
+            if (org.organization_club || org.designation) {
+              const orgQuery = `
+                INSERT INTO organizations (student_id, school_year, organization_club, designation)
+                VALUES ($1, $2, $3, $4)
+              `;
+              
+              await client.query(orgQuery, [
+                id, 
+                org.school_year || null, 
+                org.organization_club || null, 
+                org.designation || null
+              ]);
+            }
+          }
+        }
+
+        // Insert health information
+        if (height || weight || physicalCondition || health_problem) {
+          const healthQuery = `
+            INSERT INTO health_info (
+              student_id, height, weight, physical_condition, health_problem,
+              health_problem_details, last_doctor_visit, last_doctor_visit_reason, general_condition
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          `;
+          
+          await client.query(healthQuery, [
+            id, 
+            height || null, 
+            weight || null, 
+            physicalCondition || null, 
+            health_problem || null,
+            health_problem_details || null, 
+            last_doctor_visit || null, 
+            last_doctor_visit_reason || null, 
+            general_condition || null
+          ]);
+        }
+
+        // Insert test results
+        if (testResultsData && testResultsData.length > 0) {
+          for (const test of testResultsData) {
+            if (test.test_name || test.rating) {
+              const testQuery = `
+                INSERT INTO test_results (student_id, test_name, date_taken, rating)
+                VALUES ($1, $2, $3, $4)
+              `;
+              
+              await client.query(testQuery, [
+                id, 
+                test.test_name || null, 
+                test.date_taken || null, 
+                test.rating || null
+              ]);
+            }
+          }
+        }
+
+        await client.query('COMMIT');
+        
+        res.status(200).json({ message: 'Student PDS updated successfully' });
+        break;
+
+      default:
+        res.setHeader('Allow', ['GET', 'PUT']);
+        res.status(405).end(`Method ${method} Not Allowed`);
+    }
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error in student API:', error);
+    res.status(500).json({ message: 'Internal server error', error: error.message });
+  } finally {
+    client.release();
+  }
+}
