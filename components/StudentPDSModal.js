@@ -1,5 +1,85 @@
-import { useState, useRef } from 'react';
-import { FiX, FiPlus, FiSave, FiUpload, FiUser } from 'react-icons/fi';
+import { useState } from 'react';
+import { FiX, FiPlus, FiUpload, FiUser, FiTrash2, FiSave } from 'react-icons/fi';
+
+const initialStudentState = {
+  educationLevel: '',
+  schoolYear: '',
+  semester: '',
+  gradeLevel: '',
+  strand: '',
+  course: '',
+  yearLevel: '',
+  firstName: '',
+  lastName: '',
+  middleName: '',
+  nickname: '',
+  sex: '',
+  civil_status: '',
+  nationality: '',
+  contact_number: '',
+  email: '',
+  address: '',
+  city_address: '',
+  birth_date: '',
+  birth_place: '',
+  age: '',
+  religion: '',
+  emergency_contact: '',
+  emergency_relation: '',
+  emergency_number: '',
+  signature_name: '',
+  signature_date: '',
+  parent_signature_name: '',
+  parent_signature_date: '',
+  student_photo_url: '',
+  residence_type: '',
+  residence_owner: '',
+  languages_spoken_at_home: '',
+  special_talents: '',
+  living_with_parents: true,
+  studentType: '',
+  parentsMaritalStatus: '',
+  child_residing_with: '',
+  child_residence_other: '',
+  birth_order: '',
+  siblings_count: '',
+  brothers_count: '',
+  sisters_count: '',
+  step_brothers_count: '',
+  step_sisters_count: '',
+  adopted_count: '',
+  family_monthly_income: '',
+  financial_support: '',
+  relatives_at_home: '',
+  other_relatives: '',
+  total_relatives: '',
+  father: { last_name: '', first_name: '', middle_name: '', occupation: '', location: '', employment_type: '', status: '', highest_educational_attainment: '', specialization: '', post_graduate_studies: '' },
+  mother: { last_name: '', first_name: '', middle_name: '', occupation: '', location: '', employment_type: '', status: '', highest_educational_attainment: '', specialization: '', post_graduate_studies: '' },
+  baptism: { sacrament_type: 'baptism', received: false, date: '', church: '' },
+  firstCommunion: { sacrament_type: 'first communion', received: false, date: '', church: '' },
+  confirmation: { sacrament_type: 'confirmation', received: false, date: '', church: '' },
+  leisureActivities: '',
+  otherLeisureActivity: '',
+  guardianName: '',
+  guardianRelationship: '',
+  guardianAddress: '',
+  siblings: [],
+  preschool: { level: 'Preschool', school_attended_or_address: '', awards_or_honors_received: '', school_year_attended: '' },
+  elementary: { level: 'Grade School', school_attended_or_address: '', awards_or_honors_received: '', school_year_attended: '', school_name: '', school_address: '' },
+  highSchool: { level: 'High School', school_attended_or_address: '', awards_or_honors_received: '', school_year_attended: '', school_name: '', school_address: '' },
+  seniorHigh: { level: 'Senior High School', school_attended_or_address: '', awards_or_honors_received: '', school_year_attended: '', school_name: '', school_address: '' },
+  organizations: [],
+  height: '',
+  weight: '',
+  physicalCondition: '',
+  health_problem: '',
+  health_problem_details: '',
+  last_doctor_visit: '',
+  last_doctor_visit_reason: '',
+  general_condition: '',
+  testResults: [],
+};
+
 const FAMILY_INCOME_RANGES = [
   'Below ₱10,000.00',
   '₱10,001 - ₱13,000',
@@ -9,7 +89,7 @@ const FAMILY_INCOME_RANGES = [
   '₱21,001 - ₱24,000',
   '₱24,001 - ₱27,000',
   '₱27,001 - ₱30,000',
-  'Above ₱30,000.00'
+  'Above ₱30,000'
 ];
 
 const RELATIONSHIP_OPTIONS = ['sister/brother', 'aunt/uncle', 'land lord/lady', 'grandparents', 'other'];
@@ -19,9 +99,7 @@ const EDUCATION_LEVELS = [
   'Some High School',
   'High School',
   'Some College',
-  'Some College Degree',
-  'MS/MA',
-  'PhD'
+  'College Degree',
 ];
 const FINANCIAL_SUPPORT_OPTIONS = ['Parents', 'Grandparents', 'Others'];
 const FAMILY_ACTIVITIES = ['Listening to radio', 'Watching TV', 'Picnic', 'Others'];
@@ -35,24 +113,30 @@ const PARENTS_MARITAL_STATUS = [
   'Unmarried'
 ];
 
-export default function SeniorHighModal({
-  showModal,
-  setShowModal,
-  newStudent,
-  setNewStudent,
-  errors,
-  setErrors,
-  handleAddStudent,
-  handleInputChange,
-  handleSacramentChange,
-  handleSiblingChange,
-  triggerFileInput,
-  fileInputRef,
-  handleFileUpload,
-  initialStudentState,
-  handleCheckboxChange
-}) {
-  if (!showModal) return null;
+const StudentPDSModal = ({ showModal, setShowModal, onAddStudent }) => {
+  const [newStudent, setNewStudent] = useState({
+    ...initialStudentState,
+    firstName: localStorage.getItem('firstName') || '',
+    lastName: localStorage.getItem('lastName') || '',
+  });
+  const [educationLevel, setEducationLevel] = useState('');
+  const [errors, setErrors] = useState({});
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    if (name.includes('.')) {
+      const [parent, child] = name.split('.');
+      setNewStudent((prev) => ({
+        ...prev,
+        [parent]: { ...prev[parent], [child]: type === 'checkbox' ? checked : value },
+      }));
+    } else {
+      setNewStudent((prev) => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value,
+      }));
+    }
+  };
 
   const handleParentChange = (parent, field, value) => {
     setNewStudent(prev => ({
@@ -64,6 +148,17 @@ export default function SeniorHighModal({
     }));
   };
 
+  const handleSacramentChange = (sacrament, field, value) => {
+  setNewStudent(prev => ({
+    ...prev,
+    [sacrament]: {
+      ...prev[sacrament],
+      [field]: value
+    }
+  }));
+};
+
+
   const handleEducationChange = (level, field, value) => {
     setNewStudent(prev => ({
       ...prev,
@@ -74,37 +169,173 @@ export default function SeniorHighModal({
     }));
   };
 
-  const handleTestResultChange = (index, field, value) => {
-    const updatedTestResults = [...newStudent.testResults];
-    updatedTestResults[index] = { ...updatedTestResults[index], [field]: value };
-    setNewStudent(prev => ({ ...prev, testResults: updatedTestResults }));
-  };
-
-  const addTestResult = () => {
-    setNewStudent(prev => ({
-      ...prev,
-      testResults: [...prev.testResults, { testName: '', dateTaken: '', rating: '' }]
-    }));
+  const handleSiblingChange = (index, field, value) => {
+    const updatedSiblings = [...newStudent.siblings];
+    updatedSiblings[index] = { ...updatedSiblings[index], [field]: value };
+    setNewStudent((prev) => ({ ...prev, siblings: updatedSiblings }));
   };
 
   const addSibling = () => {
-    setNewStudent(prev => ({
+    setNewStudent((prev) => ({
       ...prev,
-      siblings: [...prev.siblings, { name: '', age: '', school: '', status: '', occupation: '' }]
+      siblings: [...prev.siblings, { name: '', age: '', school: '', status: '', occupation: '' }],
     }));
   };
 
   const removeSibling = (index) => {
-    setNewStudent(prev => ({
+    setNewStudent((prev) => ({
       ...prev,
-      siblings: prev.siblings.filter((_, i) => i !== index)
+      siblings: prev.siblings.filter((_, i) => i !== index),
     }));
   };
 
-  const RESIDENCE_OPTIONS = ['Rented', 'Owned'];
-  const FINANCIAL_SUPPORT_OPTIONS = ['Parents', 'Grandparents', 'Others'];
-  const FAMILY_ACTIVITIES = ['Listening to radio', 'Watching TV', 'Picnic', 'Others'];
-  const RELATIONSHIP_OPTIONS = ['sister/brother', 'aunt/uncle', 'land lord/lady', 'grandparents', 'other'];
+  const handleOrganizationChange = (index, field, value) => {
+    const updatedOrganizations = [...newStudent.organizations];
+    updatedOrganizations[index] = { ...updatedOrganizations[index], [field]: value };
+    setNewStudent((prev) => ({ ...prev, organizations: updatedOrganizations }));
+  };
+
+  const addOrganization = () => {
+    setNewStudent((prev) => ({
+      ...prev,
+      organizations: [...prev.organizations, { school_year: '', organization_club: '', designation: '' }],
+    }));
+  };
+
+  const removeOrganization = (index) => {
+    setNewStudent((prev) => ({
+      ...prev,
+      organizations: prev.organizations.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleTestResultChange = (index, field, value) => {
+    const updatedTestResults = [...newStudent.testResults];
+    updatedTestResults[index] = { ...updatedTestResults[index], [field]: value };
+    setNewStudent((prev) => ({ ...prev, testResults: updatedTestResults }));
+  };
+
+  const addTestResult = () => {
+    setNewStudent((prev) => ({
+      ...prev,
+      testResults: [...prev.testResults, { test_name: '', date_taken: '', rating: '' }],
+    }));
+  };
+
+  const removeTestResult = (index) => {
+    setNewStudent((prev) => ({
+      ...prev,
+      testResults: prev.testResults.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleCheckboxChange = (field, value) => {
+    const current = newStudent[field] || [];
+    const updated = current.includes(value)
+      ? current.filter(item => item !== value)
+      : [...current, value];
+    setNewStudent({ ...newStudent, [field]: updated });
+  };
+
+const validateForm = () => {
+  const newErrors = {};
+  setErrors({});
+  // Basic required fields for all education levels
+  if (!educationLevel) newErrors.educationLevel = 'Education level is required';
+  if (!newStudent.schoolYear) newErrors.schoolYear = 'School year is required';
+  if (!newStudent.firstName) newErrors.firstName = 'First name is required';
+  if (!newStudent.lastName) newErrors.lastName = 'Last name is required';
+  if (!newStudent.studentType) newErrors.studentType = 'Student type is required';
+
+  // Education level specific validations
+  if (educationLevel === 'Higher Education') {
+    if (!newStudent.semester) newErrors.semester = 'Semester is required';
+    if (!newStudent.course) newErrors.course = 'Course is required';
+    if (!newStudent.yearLevel) newErrors.yearLevel = 'Year level is required';
+    if (!newStudent.civil_status) newErrors.civil_status = 'Civil status is required';
+    if (!newStudent.email) newErrors.email = 'Email is required';
+  } else if (educationLevel === 'Senior High') {
+    if (!newStudent.gradeLevel) newErrors.gradeLevel = 'Grade level is required';
+    if (!newStudent.strand) newErrors.strand = 'Strand is required';
+  } else if (educationLevel === 'Basic Education') {
+    if (!newStudent.gradeLevel) newErrors.gradeLevel = 'Grade level is required';
+  }
+
+  setErrors(newErrors);
+  return Object.keys(newErrors).length === 0;
+};
+
+  const handleAddStudent = async () => {
+    if (!validateForm()) return;
+    
+    try {
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        setErrors({ submit: 'User ID not found. Please log in again.' });
+        return;
+      }
+
+      // Sanitize date fields - convert empty strings to null
+      const sanitizedStudent = {
+        ...newStudent,
+        birth_date: newStudent.birth_date || null,
+        signature_date: newStudent.signature_date || null,
+        parent_signature_date: newStudent.parent_signature_date || null,
+        last_doctor_visit: newStudent.last_doctor_visit || null,
+        baptism: {
+          ...newStudent.baptism,
+          date: newStudent.baptism.date || null,
+        },
+        firstCommunion: {
+          ...newStudent.firstCommunion,
+          date: newStudent.firstCommunion.date || null,
+        },
+        confirmation: {
+          ...newStudent.confirmation,
+          date: newStudent.confirmation.date || null,
+        },
+        testResults: newStudent.testResults.map(result => ({
+          ...result,
+          date_taken: result.date_taken || null,
+        })),
+      };
+      
+      const response = await fetch('/api/students', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'user-id': userId
+        },
+        body: JSON.stringify({ 
+          ...sanitizedStudent, 
+          educationLevel,
+          userId: userId
+        }),
+      });
+
+    if (response.ok) {
+      const studentData = await response.json();
+      localStorage.setItem('firstName', newStudent.firstName);
+      localStorage.setItem('lastName', newStudent.lastName);
+      onAddStudent(studentData);
+      setShowModal(false);
+      setNewStudent({
+        ...initialStudentState,
+        firstName: localStorage.getItem('firstName') || '',
+        lastName: localStorage.getItem('lastName') || '',
+      });
+      setEducationLevel('');
+      setErrors({});
+    } else {
+      const errorData = await response.json();
+      setErrors({ submit: errorData.message || 'Failed to add student' });
+    }
+  } catch (error) {
+    setErrors({ submit: 'Error submitting form' });
+  }
+};
+
+  if (!showModal) return null;
 
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
@@ -114,7 +345,12 @@ export default function SeniorHighModal({
           <button
             onClick={() => {
               setShowModal(false);
-              setNewStudent(initialStudentState);
+              setNewStudent({
+                ...initialStudentState,
+                firstName: localStorage.getItem('firstName') || '',
+                lastName: localStorage.getItem('lastName') || '',
+              });
+              setEducationLevel('');
               setErrors({});
             }}
             className="absolute right-6 top-6 p-2 rounded-full hover:bg-white/20 transition-colors"
@@ -142,74 +378,190 @@ export default function SeniorHighModal({
             STUDENT PERSONAL DATA SHEET
           </h1>
 
-          {/* School Year and Basic Info */}
+{/* Education Level Selection */}
+<div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+  <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+    <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">1</span>
+    Education Level
+  </h2>
+  <select
+    value={educationLevel}
+    onChange={(e) => setEducationLevel(e.target.value)}
+    className={`w-full px-4 py-2 border ${errors.educationLevel ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition shadow-sm`}
+  >
+    <option value="">Select Education Level</option>
+    <option value="Basic Education">Basic Education</option>
+    <option value="Senior High">Senior High</option>
+    <option value="Higher Education">Higher Education</option>
+  </select>
+  {errors.educationLevel && <p className="mt-1 text-xs text-red-600">{errors.educationLevel}</p>}
+</div>
+
+{/* Education Level Indicator - Only shows for Basic Education and Senior High */}
+{(educationLevel === 'Basic Education' || educationLevel === 'Senior High') && (
+  <div className="bg-blue-50 p-4 rounded-lg mb-6 border border-blue-200">
+    <div className="flex items-center">
+      <svg className="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span className="text-blue-800 font-medium">
+        {educationLevel === 'Basic Education' && 'Basic Education selected - For elementary and junior high school students'}
+        {educationLevel === 'Senior High' && 'Senior High School selected - For Grades 11 and 12 students'}
+      </span>
+    </div>
+  </div>
+)}
+
+{/* Higher Education Indicator - Only shows for Higher Education */}
+{educationLevel === 'Higher Education' && (
+  <div className="bg-green-50 p-4 rounded-lg mb-6 border border-green-200">
+    <div className="flex items-center">
+      <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span className="text-green-800 font-medium">
+        Higher Education selected - For college students
+      </span>
+    </div>
+  </div>
+)}
+
+          {/* Personal Information */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">2</span>
+              Personal Information
+            </h2>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">School Year*</label>
                 <input
                   type="text"
-                  name="academicYear"
-                  value={newStudent.academicYear || ''}
+                  name="schoolYear"
+                  value={newStudent.schoolYear}
                   onChange={handleInputChange}
-                  className={`w-full px-4 py-2 border ${errors.academicYear ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition shadow-sm`}
+                  className={`w-full px-4 py-2 border ${errors.schoolYear ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition shadow-sm`}
                   placeholder="e.g., 2023-2024"
                 />
-                {errors.academicYear && <p className="mt-1 text-xs text-red-600">{errors.academicYear}</p>}
+                {errors.schoolYear && <p className="mt-1 text-xs text-red-600">{errors.schoolYear}</p>}
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Grade/Year Level & Strand*</label>
-                <div className="grid grid-cols-2 gap-2">
+              
+              {educationLevel === 'Higher Education' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Semester*</label>
                   <select
-                    name="gradeLevel"
-                    value={newStudent.gradeLevel || ''}
+                    name="semester"
+                    value={newStudent.semester}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-2 border ${errors.gradeLevel ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition shadow-sm`}
+                    className={`w-full px-4 py-2 border ${errors.semester ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition shadow-sm`}
                   >
-                    <option value="">Select Grade</option>
-                    <option value="Grade 11">Grade 11</option>
-                    <option value="Grade 12">Grade 12</option>
+                    <option value="">Select Semester</option>
+                    <option value="1st Semester">1st Semester</option>
+                    <option value="2nd Semester">2nd Semester</option>
                   </select>
-                  <input
-                    type="text"
-                    name="strand"
-                    value={newStudent.strand || ''}
-                    onChange={handleInputChange}
-                    className={`w-full px-4 py-2 border ${errors.strand ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition shadow-sm`}
-                    placeholder="Strand"
-                  />
+                  {errors.semester && <p className="mt-1 text-xs text-red-600">{errors.semester}</p>}
+                </div>
+              )}
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {educationLevel === 'Higher Education' ? 'Course & Year Level*' : 'Grade Level & Strand*'}
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(educationLevel === 'Basic Education' || educationLevel === 'Senior High') && (
+                    <select
+                      name="gradeLevel"
+                      value={newStudent.gradeLevel}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-2 border ${errors.gradeLevel ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition shadow-sm`}
+                    >
+                      <option value="">Select Grade</option>
+                      <option value="Grade 1">Grade 1</option>
+                      <option value="Grade 2">Grade 2</option>
+                      <option value="Grade 3">Grade 3</option>
+                      <option value="Grade 4">Grade 4</option>
+                      <option value="Grade 5">Grade 5</option>
+                      <option value="Grade 6">Grade 6</option>
+                      <option value="Grade 7">Grade 7</option>
+                      <option value="Grade 8">Grade 8</option>
+                      <option value="Grade 9">Grade 9</option>
+                      <option value="Grade 10">Grade 10</option>
+                      <option value="Grade 11">Grade 11</option>
+                      <option value="Grade 12">Grade 12</option>
+                    </select>
+                  )}
+                  
+                  {educationLevel === 'Higher Education' && (
+                    <select
+                      name="yearLevel"
+                      value={newStudent.yearLevel}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-2 border ${errors.yearLevel ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition shadow-sm`}
+                    >
+                      <option value="">Select Year</option>
+                      <option value="1st Year">1st Year</option>
+                      <option value="2nd Year">2nd Year</option>
+                      <option value="3rd Year">3rd Year</option>
+                      <option value="4th Year">4th Year</option>
+                    </select>
+                  )}
+                  
+                  {educationLevel === 'Senior High' && (
+                    <input
+                      type="text"
+                      name="strand"
+                      value={newStudent.strand}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-2 border ${errors.strand ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition shadow-sm`}
+                      placeholder="e.g., STEM"
+                    />
+                  )}
+                  
+                  {educationLevel === 'Higher Education' && (
+                    <input
+                      type="text"
+                      name="course"
+                      value={newStudent.course}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-2 border ${errors.course ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition shadow-sm`}
+                      placeholder="e.g., BS Computer Science"
+                    />
+                  )}
                 </div>
                 {errors.gradeLevel && <p className="mt-1 text-xs text-red-600">{errors.gradeLevel}</p>}
+                {errors.yearLevel && <p className="mt-1 text-xs text-red-600">{errors.yearLevel}</p>}
                 {errors.strand && <p className="mt-1 text-xs text-red-600">{errors.strand}</p>}
+                {errors.course && <p className="mt-1 text-xs text-red-600">{errors.course}</p>}
               </div>
-            </div>
-
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Student Type*</label>
-              <div className="grid grid-cols-4 gap-2">
-                {['New', 'Transferee', 'Returnee', 'Old'].map((type) => (
-                  <label key={type} className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      name="studentType"
-                      checked={newStudent.studentType === type}
-                      onChange={() => setNewStudent({ ...newStudent, studentType: type })}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                    />
-                    <span className="text-sm text-gray-700">{type}</span>
-                  </label>
-                ))}
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Student Type*</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {['New', 'Transferee', 'Returnee', 'Old'].map((type) => (
+                    <label key={type} className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        name="studentType"
+                        checked={newStudent.studentType === type}
+                        onChange={() => setNewStudent({ ...newStudent, studentType: type })}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                      />
+                      <span className="text-sm text-gray-700">{type}</span>
+                    </label>
+                  ))}
+                </div>
+                {errors.studentType && <p className="mt-1 text-xs text-red-600">{errors.studentType}</p>}
               </div>
             </div>
 
             {/* Photo Upload */}
             <div className="flex justify-center mb-6">
               <div className="relative group">
-                <div className={`w-32 h-32 rounded-full ${newStudent.studentPhotoUrl ? 'border-4 border-white shadow-md' : 'bg-gray-100 border-4 border-white shadow-md'} flex items-center justify-center overflow-hidden`}>
-                  {newStudent.studentPhotoUrl ? (
+                <div className={`w-32 h-32 rounded-full ${newStudent.student_photo_url ? 'border-4 border-white shadow-md' : 'bg-gray-100 border-4 border-white shadow-md'} flex items-center justify-center overflow-hidden`}>
+                  {newStudent.student_photo_url ? (
                     <img
-                      src={newStudent.studentPhotoUrl}
+                      src={newStudent.student_photo_url}
                       alt="Student"
                       className="w-full h-full object-cover"
                     />
@@ -218,16 +570,24 @@ export default function SeniorHighModal({
                   )}
                 </div>
                 <button
-                  onClick={triggerFileInput}
+                  onClick={() => document.getElementById('photo-upload').click()}
                   className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full p-2 hover:bg-blue-700 transition-colors shadow-md group-hover:opacity-100 opacity-90"
                   aria-label="Upload photo"
                 >
                   <FiUpload className="w-4 h-4" />
                 </button>
                 <input
+                  id="photo-upload"
                   type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileUpload}
+                  onChange={(e) => {
+                    // Handle file upload logic here
+                    const file = e.target.files[0];
+                    if (file) {
+                      // You would typically upload the file and set the URL
+                      // For now, we'll just set a placeholder
+                      setNewStudent({ ...newStudent, student_photo_url: URL.createObjectURL(file) });
+                    }
+                  }}
                   accept="image/*"
                   className="hidden"
                 />
@@ -241,9 +601,10 @@ export default function SeniorHighModal({
                 <input
                   type="text"
                   name="lastName"
-                  value={newStudent.lastName || ''}
+                  value={newStudent.lastName}
                   onChange={handleInputChange}
                   className={`w-full px-3 py-2 border ${errors.lastName ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition`}
+                  placeholder="e.g., Dela Cruz"
                 />
                 {errors.lastName && <p className="mt-1 text-xs text-red-600">{errors.lastName}</p>}
               </div>
@@ -252,9 +613,10 @@ export default function SeniorHighModal({
                 <input
                   type="text"
                   name="firstName"
-                  value={newStudent.firstName || ''}
+                  value={newStudent.firstName}
                   onChange={handleInputChange}
                   className={`w-full px-3 py-2 border ${errors.firstName ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition`}
+                  placeholder="e.g., Juan"
                 />
                 {errors.firstName && <p className="mt-1 text-xs text-red-600">{errors.firstName}</p>}
               </div>
@@ -263,58 +625,96 @@ export default function SeniorHighModal({
                 <input
                   type="text"
                   name="middleName"
-                  value={newStudent.middleName || ''}
+                  value={newStudent.middleName}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
+                  placeholder="e.g., Santos"
                 />
               </div>
             </div>
 
+            {educationLevel === 'Higher Education' && (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nickname</label>
+                    <input
+                      type="text"
+                      name="nickname"
+                      value={newStudent.nickname}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
+                      placeholder="e.g., Johnny"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Civil Status*</label>
+                    <select
+                      name="civil_status"
+                      value={newStudent.civil_status}
+                      onChange={handleInputChange}
+                      className={`w-full px-3 py-2 border ${errors.civil_status ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition`}
+                    >
+                      <option value="">Select</option>
+                      <option value="Single">Single</option>
+                      <option value="Married">Married</option>
+                      <option value="Widowed">Widowed</option>
+                      <option value="Separated">Separated</option>
+                    </select>
+                    {errors.civil_status && <p className="mt-1 text-xs text-red-600">{errors.civil_status}</p>}
+                  </div>
+                </div>
+                
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email*</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={newStudent.email}
+                    onChange={handleInputChange}
+                    className={`w-full px-3 py-2 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition`}
+                    placeholder="e.g., juan.delacruz@example.com"
+                  />
+                  {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
+                </div>
+              </>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Gender*</label>
-                <div className="flex gap-3">
-                  <label className="inline-flex items-center">
-                    <input
-                      type="radio"
-                      name="gender"
-                      checked={newStudent.gender === 'Male'}
-                      onChange={() => setNewStudent({ ...newStudent, gender: 'Male' })}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">Male</span>
-                  </label>
-                  <label className="inline-flex items-center">
-                    <input
-                      type="radio"
-                      name="gender"
-                      checked={newStudent.gender === 'Female'}
-                      onChange={() => setNewStudent({ ...newStudent, gender: 'Female' })}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">Female</span>
-                  </label>
-                </div>
-                {errors.gender && <p className="mt-1 text-xs text-red-600">{errors.gender}</p>}
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sex*</label>
+                <select
+                  name="sex"
+                  value={newStudent.sex}
+                  onChange={handleInputChange}
+                  className={`w-full px-3 py-2 border ${errors.sex ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition`}
+                >
+                  <option value="">Select</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+                {errors.sex && <p className="mt-1 text-xs text-red-600">{errors.sex}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Citizenship</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nationality</label>
                 <input
                   type="text"
-                  name="citizenship"
-                  value={newStudent.citizenship || ''}
+                  name="nationality"
+                  value={newStudent.nationality}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
+                  placeholder="e.g., Filipino"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Tel./Mobile #</label>
                 <input
                   type="text"
-                  name="contactNumber"
-                  value={newStudent.contactNumber || ''}
+                  name="contact_number"
+                  value={newStudent.contact_number}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
+                  placeholder="e.g., 09123456789"
                 />
               </div>
             </div>
@@ -324,102 +724,137 @@ export default function SeniorHighModal({
               <input
                 type="text"
                 name="address"
-                value={newStudent.address || ''}
+                value={newStudent.address}
                 onChange={handleInputChange}
                 className={`w-full px-3 py-2 border ${errors.address ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition`}
+                placeholder="e.g., 123 Main Street, Barangay, City"
               />
               {errors.address && <p className="mt-1 text-xs text-red-600">{errors.address}</p>}
             </div>
+
+            {educationLevel === 'Higher Education' && (
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-1">City Address (if boarding)</label>
+                <input
+                  type="text"
+                  name="city_address"
+                  value={newStudent.city_address}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
+                  placeholder="e.g., 456 Dormitory Street, City"
+                />
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth*</label>
                 <input
                   type="date"
-                  name="birthDate"
-                  value={newStudent.birthDate || ''}
+                  name="birth_date"
+                  value={newStudent.birth_date}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border ${errors.birthDate ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition`}
+                  className={`w-full px-3 py-2 border ${errors.birth_date ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition`}
                 />
-                {errors.birthDate && <p className="mt-1 text-xs text-red-600">{errors.birthDate}</p>}
+                {errors.birth_date && <p className="mt-1 text-xs text-red-600">{errors.birth_date}</p>}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Place of Birth</label>
                 <input
                   type="text"
-                  name="birthPlace"
-                  value={newStudent.birthPlace || ''}
+                  name="birth_place"
+                  value={newStudent.birth_place}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
+                  placeholder="e.g., Manila City"
                 />
               </div>
             </div>
 
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Religion</label>
-              <input
-                type="text"
-                name="religion"
-                value={newStudent.religion || ''}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
-              />
-            </div>
-
-            {/* Sacraments Section */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Sacraments Received</label>
-              <div className="overflow-x-auto">
-                <table className="min-w-full border border-gray-200 rounded-lg">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Sacrament</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Received</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Date</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Church</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white">
-                    {[
-                      { sacrament: 'baptism', label: 'Baptism' },
-                      { sacrament: 'firstCommunion', label: 'First Communion' },
-                      { sacrament: 'confirmation', label: 'Confirmation' }
-                    ].map(({ sacrament, label }) => (
-                      <tr key={sacrament} className="hover:bg-gray-50">
-                        <td className="px-4 py-2 text-sm font-medium text-gray-700">{label}</td>
-                        <td className="px-4 py-2">
-                          <div className="flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={newStudent[sacrament].received || false}
-                              onChange={(e) => handleSacramentChange(sacrament, 'received', e.target.checked)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                            />
-                          </div>
-                        </td>
-                        <td className="px-4 py-2">
-                          <input
-                            type="date"
-                            value={newStudent[sacrament].date || ''}
-                            onChange={(e) => handleSacramentChange(sacrament, 'date', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
-                            disabled={!newStudent[sacrament].received}
-                          />
-                        </td>
-                        <td className="px-4 py-2">
-                          <input
-                            type="text"
-                            value={newStudent[sacrament].church || ''}
-                            onChange={(e) => handleSacramentChange(sacrament, 'church', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
-                            disabled={!newStudent[sacrament].received}
-                            placeholder="Church name"
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+           {/* SACRAMENTS SECTION - Only show for Basic Education and Senior High */}
+  {(educationLevel === 'Basic Education' || educationLevel === 'Senior High') && (
+    <div className="mb-6">
+      <label className="block text-sm font-medium text-gray-700 mb-2">Sacraments Received</label>
+      <div className="overflow-x-auto">
+        <table className="min-w-full border border-gray-200 rounded-lg">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Sacrament</th>
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Received</th>
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Date</th>
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Church</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white">
+            {[
+              { sacrament: 'baptism', label: 'Baptism' },
+              { sacrament: 'firstCommunion', label: 'First Communion' },
+              { sacrament: 'confirmation', label: 'Confirmation' }
+            ].map(({ sacrament, label }) => (
+              <tr key={sacrament} className="hover:bg-gray-50">
+                <td className="px-4 py-2 text-sm font-medium text-gray-700">{label}</td>
+                <td className="px-4 py-2">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={newStudent[sacrament].received || false}
+                      onChange={(e) => handleSacramentChange(sacrament, 'received', e.target.checked)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                  </div>
+                </td>
+                <td className="px-4 py-2">
+                  <input
+                    type="date"
+                    value={newStudent[sacrament].date || ''}
+                    onChange={(e) => handleSacramentChange(sacrament, 'date', e.target.value)}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 ${
+                      !newStudent[sacrament].received ? 'bg-gray-100 text-gray-500' : ''
+                    }`}
+                    disabled={!newStudent[sacrament].received}
+                  />
+                </td>
+                <td className="px-4 py-2">
+                  <input
+                    type="text"
+                    value={newStudent[sacrament].church || ''}
+                    onChange={(e) => handleSacramentChange(sacrament, 'church', e.target.value)}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 ${
+                      !newStudent[sacrament].received ? 'bg-gray-100 text-gray-500' : ''
+                    }`}
+                    disabled={!newStudent[sacrament].received}
+                    placeholder="Church name"
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
+                <input
+                  type="number"
+                  name="age"
+                  value={newStudent.age}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
+                  placeholder="e.g., 18"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Religion</label>
+                <input
+                  type="text"
+                  name="religion"
+                  value={newStudent.religion}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
+                  placeholder="e.g., Catholic"
+                />
               </div>
             </div>
 
@@ -429,30 +864,33 @@ export default function SeniorHighModal({
                 <label className="block text-sm font-medium text-gray-700 mb-1">Emergency Contact Person</label>
                 <input
                   type="text"
-                  name="emergencyContact"
-                  value={newStudent.emergencyContact || ''}
+                  name="emergency_contact"
+                  value={newStudent.emergency_contact}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
+                  placeholder="e.g., Maria Dela Cruz"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Relationship</label>
                 <input
                   type="text"
-                  name="emergencyRelation"
-                  value={newStudent.emergencyRelation || ''}
+                  name="emergency_relation"
+                  value={newStudent.emergency_relation}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
+                  placeholder="e.g., Mother"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Contact Number</label>
                 <input
                   type="text"
-                  name="emergencyNumber"
-                  value={newStudent.emergencyNumber || ''}
+                  name="emergency_number"
+                  value={newStudent.emergency_number}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
+                  placeholder="e.g., 09187654321"
                 />
               </div>
             </div>
@@ -461,7 +899,7 @@ export default function SeniorHighModal({
           {/* Family Information */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
             <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">2</span>
+              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">3</span>
               Family Information
             </h2>
 
@@ -475,27 +913,30 @@ export default function SeniorHighModal({
                       <label className="block text-xs text-gray-600 mb-1">Last Name</label>
                       <input
                         type="text"
-                        value={newStudent.father.lastName || ''}
-                        onChange={(e) => handleParentChange('father', 'lastName', e.target.value)}
+                        value={newStudent.father.last_name || ''}
+                        onChange={(e) => handleParentChange('father', 'last_name', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                        placeholder="e.g., Dela Cruz"
                       />
                     </div>
                     <div>
                       <label className="block text-xs text-gray-600 mb-1">First Name</label>
                       <input
                         type="text"
-                        value={newStudent.father.firstName || ''}
-                        onChange={(e) => handleParentChange('father', 'firstName', e.target.value)}
+                        value={newStudent.father.first_name || ''}
+                        onChange={(e) => handleParentChange('father', 'first_name', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                        placeholder="e.g., Juan"
                       />
                     </div>
                     <div>
                       <label className="block text-xs text-gray-600 mb-1">Middle Name</label>
                       <input
                         type="text"
-                        value={newStudent.father.middleName || ''}
-                        onChange={(e) => handleParentChange('father', 'middleName', e.target.value)}
+                        value={newStudent.father.middle_name || ''}
+                        onChange={(e) => handleParentChange('father', 'middle_name', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                        placeholder="e.g., Santos"
                       />
                     </div>
                   </div>
@@ -507,6 +948,7 @@ export default function SeniorHighModal({
                       value={newStudent.father.occupation || ''}
                       onChange={(e) => handleParentChange('father', 'occupation', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                      placeholder="e.g., Engineer"
                     />
                   </div>
 
@@ -543,8 +985,8 @@ export default function SeniorHighModal({
                           <input
                             type="radio"
                             name="fatherEmploymentType"
-                            checked={newStudent.father.employmentType === 'Private'}
-                            onChange={() => handleParentChange('father', 'employmentType', 'Private')}
+                            checked={newStudent.father.employment_type === 'Private'}
+                            onChange={() => handleParentChange('father', 'employment_type', 'Private')}
                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                           />
                           <span className="ml-1 text-xs">Private</span>
@@ -553,8 +995,8 @@ export default function SeniorHighModal({
                           <input
                             type="radio"
                             name="fatherEmploymentType"
-                            checked={newStudent.father.employmentType === 'Government'}
-                            onChange={() => handleParentChange('father', 'employmentType', 'Government')}
+                            checked={newStudent.father.employment_type === 'Government'}
+                            onChange={() => handleParentChange('father', 'employment_type', 'Government')}
                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                           />
                           <span className="ml-1 text-xs">Government</span>
@@ -584,8 +1026,8 @@ export default function SeniorHighModal({
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">Highest Educational Attainment</label>
                     <select
-                      value={newStudent.father.education || ''}
-                      onChange={(e) => handleParentChange('father', 'education', e.target.value)}
+                      value={newStudent.father.highest_educational_attainment || ''}
+                      onChange={(e) => handleParentChange('father', 'highest_educational_attainment', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="">Select</option>
@@ -595,6 +1037,34 @@ export default function SeniorHighModal({
                     </select>
                   </div>
 
+                  {newStudent.father.highest_educational_attainment === 'College Degree' && (
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Post Graduate Studies</label>
+                      <div className="flex flex-wrap gap-2">
+                        <label className="flex items-center">
+                          <input
+                            type="radio"
+                            name="fatherPostGrad"
+                            checked={newStudent.father.post_graduate_studies === 'MS/MA'}
+                            onChange={() => handleParentChange('father', 'post_graduate_studies', 'MS/MA')}
+                            className="h-4 w-4 text-blue-600"
+                          />
+                          <span className="ml-1 text-xs">MS/MA</span>
+                        </label>
+                        <label className="flex items-center">
+                          <input
+                            type="radio"
+                            name="fatherPostGrad"
+                            checked={newStudent.father.post_graduate_studies === 'PhD'}
+                            onChange={() => handleParentChange('father', 'post_graduate_studies', 'PhD')}
+                            className="h-4 w-4 text-blue-600"
+                          />
+                          <span className="ml-1 text-xs">PhD</span>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">Specialization</label>
                     <input
@@ -602,6 +1072,7 @@ export default function SeniorHighModal({
                       value={newStudent.father.specialization || ''}
                       onChange={(e) => handleParentChange('father', 'specialization', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                      placeholder="e.g., Civil Engineering"
                     />
                   </div>
                 </div>
@@ -616,27 +1087,30 @@ export default function SeniorHighModal({
                       <label className="block text-xs text-gray-600 mb-1">Last Name</label>
                       <input
                         type="text"
-                        value={newStudent.mother.lastName || ''}
-                        onChange={(e) => handleParentChange('mother', 'lastName', e.target.value)}
+                        value={newStudent.mother.last_name || ''}
+                        onChange={(e) => handleParentChange('mother', 'last_name', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                        placeholder="e.g., Dela Cruz"
                       />
                     </div>
                     <div>
                       <label className="block text-xs text-gray-600 mb-1">First Name</label>
                       <input
                         type="text"
-                        value={newStudent.mother.firstName || ''}
-                        onChange={(e) => handleParentChange('mother', 'firstName', e.target.value)}
+                        value={newStudent.mother.first_name || ''}
+                        onChange={(e) => handleParentChange('mother', 'first_name', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                        placeholder="e.g., Maria"
                       />
                     </div>
                     <div>
                       <label className="block text-xs text-gray-600 mb-1">Middle Name</label>
                       <input
                         type="text"
-                        value={newStudent.mother.middleName || ''}
-                        onChange={(e) => handleParentChange('mother', 'middleName', e.target.value)}
+                        value={newStudent.mother.middle_name || ''}
+                        onChange={(e) => handleParentChange('mother', 'middle_name', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                        placeholder="e.g., Santos"
                       />
                     </div>
                   </div>
@@ -648,6 +1122,7 @@ export default function SeniorHighModal({
                       value={newStudent.mother.occupation || ''}
                       onChange={(e) => handleParentChange('mother', 'occupation', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                      placeholder="e.g., Teacher"
                     />
                   </div>
 
@@ -684,8 +1159,8 @@ export default function SeniorHighModal({
                           <input
                             type="radio"
                             name="motherEmploymentType"
-                            checked={newStudent.mother.employmentType === 'Private'}
-                            onChange={() => handleParentChange('mother', 'employmentType', 'Private')}
+                            checked={newStudent.mother.employment_type === 'Private'}
+                            onChange={() => handleParentChange('mother', 'employment_type', 'Private')}
                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                           />
                           <span className="ml-1 text-xs">Private</span>
@@ -694,8 +1169,8 @@ export default function SeniorHighModal({
                           <input
                             type="radio"
                             name="motherEmploymentType"
-                            checked={newStudent.mother.employmentType === 'Government'}
-                            onChange={() => handleParentChange('mother', 'employmentType', 'Government')}
+                            checked={newStudent.mother.employment_type === 'Government'}
+                            onChange={() => handleParentChange('mother', 'employment_type', 'Government')}
                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                           />
                           <span className="ml-1 text-xs">Government</span>
@@ -725,8 +1200,8 @@ export default function SeniorHighModal({
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">Highest Educational Attainment</label>
                     <select
-                      value={newStudent.mother.education || ''}
-                      onChange={(e) => handleParentChange('mother', 'education', e.target.value)}
+                      value={newStudent.mother.highest_educational_attainment || ''}
+                      onChange={(e) => handleParentChange('mother', 'highest_educational_attainment', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="">Select</option>
@@ -736,6 +1211,34 @@ export default function SeniorHighModal({
                     </select>
                   </div>
 
+                  {newStudent.mother.highest_educational_attainment === 'College Degree' && (
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Post Graduate Studies</label>
+                      <div className="flex flex-wrap gap-2">
+                        <label className="flex items-center">
+                          <input
+                            type="radio"
+                            name="motherPostGrad"
+                            checked={newStudent.mother.post_graduate_studies === 'MS/MA'}
+                            onChange={() => handleParentChange('mother', 'post_graduate_studies', 'MS/MA')}
+                            className="h-4 w-4 text-blue-600"
+                          />
+                          <span className="ml-1 text-xs">MS/MA</span>
+                        </label>
+                        <label className="flex items-center">
+                          <input
+                            type="radio"
+                            name="motherPostGrad"
+                            checked={newStudent.mother.post_graduate_studies === 'PhD'}
+                            onChange={() => handleParentChange('mother', 'post_graduate_studies', 'PhD')}
+                            className="h-4 w-4 text-blue-600"
+                          />
+                          <span className="ml-1 text-xs">PhD</span>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">Specialization</label>
                     <input
@@ -743,6 +1246,7 @@ export default function SeniorHighModal({
                       value={newStudent.mother.specialization || ''}
                       onChange={(e) => handleParentChange('mother', 'specialization', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                      placeholder="e.g., Education"
                     />
                   </div>
                 </div>
@@ -774,9 +1278,9 @@ export default function SeniorHighModal({
                   <label key={order} className="inline-flex items-center">
                     <input
                       type="radio"
-                      name="birthOrder"
-                      checked={newStudent.birthOrder === order}
-                      onChange={() => setNewStudent({ ...newStudent, birthOrder: order })}
+                      name="birth_order"
+                      checked={newStudent.birth_order === order}
+                      onChange={() => setNewStudent({ ...newStudent, birth_order: order })}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                     />
                     <span className="ml-2 text-sm text-gray-700">{order}</span>
@@ -785,17 +1289,17 @@ export default function SeniorHighModal({
                 <label className="inline-flex items-center">
                   <input
                     type="radio"
-                    name="birthOrder"
-                    checked={!['1st', '2nd', '3rd', '4th', '5th', '6th', '7th'].includes(newStudent.birthOrder)}
-                    onChange={() => setNewStudent({ ...newStudent, birthOrder: 'other' })}
+                    name="birth_order"
+                    checked={!['1st', '2nd', '3rd', '4th', '5th', '6th', '7th'].includes(newStudent.birth_order)}
+                    onChange={() => setNewStudent({ ...newStudent, birth_order: 'other' })}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                   />
                   <span className="ml-2 text-sm text-gray-700">Other</span>
-                  {newStudent.birthOrder === 'other' && (
+                  {newStudent.birth_order === 'other' && (
                     <input
                       type="text"
-                      value={newStudent.otherBirthOrder || ''}
-                      onChange={(e) => setNewStudent({ ...newStudent, otherBirthOrder: e.target.value })}
+                      value={newStudent.child_residence_other || ''}
+                      onChange={(e) => setNewStudent({ ...newStudent, child_residence_other: e.target.value })}
                       className="ml-2 px-2 py-1 border border-gray-300 rounded-md text-sm w-20"
                       placeholder="Specify"
                     />
@@ -809,16 +1313,17 @@ export default function SeniorHighModal({
                 <label className="block text-sm font-medium text-gray-700 mb-1">Number of Siblings*</label>
                 <input
                   type="number"
-                  name="siblingsCount"
-                  value={newStudent.siblingsCount || ''}
+                  name="siblings_count"
+                  value={newStudent.siblings_count || ''}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border ${errors.siblingsCount ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition`}
+                  className={`w-full px-3 py-2 border ${errors.siblings_count ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition`}
                   min="0"
+                  placeholder="e.g., 2"
                 />
-                {errors.siblingsCount && <p className="mt-1 text-xs text-red-600">{errors.siblingsCount}</p>}
+                {errors.siblings_count && <p className="mt-1 text-xs text-red-600">{errors.siblings_count}</p>}
               </div>
 
-              {newStudent.siblingsCount > 0 && (
+              {newStudent.siblings_count > 0 && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Sibling Breakdown</label>
                   <div className="grid grid-cols-2 gap-4">
@@ -826,117 +1331,135 @@ export default function SeniorHighModal({
                       <label className="block text-xs text-gray-600 mb-1">Brothers</label>
                       <input
                         type="number"
-                        value={newStudent.brothersCount || 0}
-                        onChange={(e) => setNewStudent({ ...newStudent, brothersCount: parseInt(e.target.value) || 0 })}
+                        value={newStudent.brothers_count || 0}
+                        onChange={(e) => setNewStudent({ ...newStudent, brothers_count: parseInt(e.target.value) || 0 })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                         min="0"
-                        max={newStudent.siblingsCount}
+                        max={newStudent.siblings_count}
+                        placeholder="0"
                       />
                     </div>
                     <div>
                       <label className="block text-xs text-gray-600 mb-1">Sisters</label>
                       <input
                         type="number"
-                        value={newStudent.sistersCount || 0}
-                        onChange={(e) => setNewStudent({ ...newStudent, sistersCount: parseInt(e.target.value) || 0 })}
+                        value={newStudent.sisters_count || 0}
+                        onChange={(e) => setNewStudent({ ...newStudent, sisters_count: parseInt(e.target.value) || 0 })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                         min="0"
-                        max={newStudent.siblingsCount}
+                        max={newStudent.siblings_count}
+                        placeholder="0"
                       />
                     </div>
                     <div>
                       <label className="block text-xs text-gray-600 mb-1">Step Brothers</label>
                       <input
                         type="number"
-                        value={newStudent.stepBrothersCount || 0}
-                        onChange={(e) => setNewStudent({ ...newStudent, stepBrothersCount: parseInt(e.target.value) || 0 })}
+                        value={newStudent.step_brothers_count || 0}
+                        onChange={(e) => setNewStudent({ ...newStudent, step_brothers_count: parseInt(e.target.value) || 0 })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                         min="0"
-                        max={newStudent.siblingsCount}
+                        max={newStudent.siblings_count}
+                        placeholder="0"
                       />
                     </div>
                     <div>
                       <label className="block text-xs text-gray-600 mb-1">Step Sisters</label>
                       <input
                         type="number"
-                        value={newStudent.stepSistersCount || 0}
-                        onChange={(e) => setNewStudent({ ...newStudent, stepSistersCount: parseInt(e.target.value) || 0 })}
+                        value={newStudent.step_sisters_count || 0}
+                        onChange={(e) => setNewStudent({ ...newStudent, step_sisters_count: parseInt(e.target.value) || 0 })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                         min="0"
-                        max={newStudent.siblingsCount}
+                        max={newStudent.siblings_count}
+                        placeholder="0"
                       />
                     </div>
                     <div>
                       <label className="block text-xs text-gray-600 mb-1">Adopted</label>
                       <input
                         type="number"
-                        value={newStudent.adoptedSiblingsCount || 0}
-                        onChange={(e) => setNewStudent({ ...newStudent, adoptedSiblingsCount: parseInt(e.target.value) || 0 })}
+                        value={newStudent.adopted_count || 0}
+                        onChange={(e) => setNewStudent({ ...newStudent, adopted_count: parseInt(e.target.value) || 0 })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                         min="0"
-                        max={newStudent.siblingsCount}
+                        max={newStudent.siblings_count}
+                        placeholder="0"
                       />
                     </div>
                   </div>
 
                   {/* Validation message if counts don't add up */}
-                  {((newStudent.brothersCount || 0) +
-                    (newStudent.sistersCount || 0) +
-                    (newStudent.stepBrothersCount || 0) +
-                    (newStudent.stepSistersCount || 0) +
-                    (newStudent.adoptedSiblingsCount || 0)) > (newStudent.siblingsCount || 0) && (
+                  {((newStudent.brothers_count || 0) +
+                    (newStudent.sisters_count || 0) +
+                    (newStudent.step_brothers_count || 0) +
+                    (newStudent.step_sisters_count || 0) +
+                    (newStudent.adopted_count || 0)) > (newStudent.siblings_count || 0) && (
                       <p className="mt-2 text-xs text-red-600">
                         Total sibling breakdown cannot exceed the number of siblings
                       </p>
                     )}
                 </div>
               )}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Other Relatives at Home</label>
-                <div className="flex flex-wrap gap-2">
-                  {['Brother/s', 'Sister/s', 'Grand Parents', 'Uncle', 'Aunt', 'Step Brother/s', 'Step Sister/s', 'Cousins'].map(relative => (
-                    <label key={relative} className="inline-flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={newStudent.otherRelativesAtHome?.includes(relative) || false}
-                        onChange={() => {
-                          const current = newStudent.otherRelativesAtHome || [];
-                          const updated = current.includes(relative)
-                            ? current.filter(r => r !== relative)
-                            : [...current, relative];
-                          setNewStudent({ ...newStudent, otherRelativesAtHome: updated });
-                        }}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">{relative}</span>
-                    </label>
-                  ))}
-                  <label className="inline-flex items-center">
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Other Relatives at Home</label>
+              <div className="flex flex-wrap gap-2">
+                {['Brother/s', 'Sister/s', 'Grand Parents', 'Uncle', 'Aunt', 'Step Brother/s', 'Step Sister/s', 'Cousins'].map(relative => (
+                  <label key={relative} className="inline-flex items-center">
                     <input
                       type="checkbox"
-                      checked={newStudent.otherRelativesAtHome?.includes('Other') || false}
+                      checked={newStudent.relatives_at_home?.includes(relative) || false}
                       onChange={() => {
-                        const current = newStudent.otherRelativesAtHome || [];
-                        const updated = current.includes('Other')
-                          ? current.filter(r => r !== 'Other')
-                          : [...current, 'Other'];
-                        setNewStudent({ ...newStudent, otherRelativesAtHome: updated });
+                        const current = newStudent.relatives_at_home || [];
+                        const updated = current.includes(relative)
+                          ? current.filter(r => r !== relative)
+                          : [...current, relative];
+                        setNewStudent({ ...newStudent, relatives_at_home: updated });
                       }}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
-                    <span className="ml-2 text-sm text-gray-700">Other</span>
-                    {newStudent.otherRelativesAtHome?.includes('Other') && (
-                      <input
-                        type="text"
-                        value={newStudent.otherRelativeSpecify || ''}
-                        onChange={(e) => setNewStudent({ ...newStudent, otherRelativeSpecify: e.target.value })}
-                        className="ml-2 px-2 py-1 border border-gray-300 rounded-md text-sm w-20"
-                        placeholder="Specify"
-                      />
-                    )}
+                    <span className="ml-2 text-sm text-gray-700">{relative}</span>
                   </label>
-                </div>
+                ))}
+                <label className="inline-flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={newStudent.relatives_at_home?.includes('Other') || false}
+                    onChange={() => {
+                      const current = newStudent.relatives_at_home || [];
+                      const updated = current.includes('Other')
+                        ? current.filter(r => r !== 'Other')
+                        : [...current, 'Other'];
+                      setNewStudent({ ...newStudent, relatives_at_home: updated });
+                    }}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Other</span>
+                  {newStudent.relatives_at_home?.includes('Other') && (
+                    <input
+                      type="text"
+                      value={newStudent.other_relatives || ''}
+                      onChange={(e) => setNewStudent({ ...newStudent, other_relatives: e.target.value })}
+                      className="ml-2 px-2 py-1 border border-gray-300 rounded-md text-sm w-20"
+                      placeholder="Specify"
+                    />
+                  )}
+                </label>
               </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Total Relatives</label>
+              <input
+                type="number"
+                name="total_relatives"
+                value={newStudent.total_relatives || ''}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
+                placeholder="e.g., 5"
+              />
             </div>
 
             <div className="mb-6">
@@ -946,14 +1469,100 @@ export default function SeniorHighModal({
                   <label key={income} className="inline-flex items-center">
                     <input
                       type="radio"
-                      name="familyMonthlyIncome"
-                      checked={newStudent.familyMonthlyIncome === income}
-                      onChange={() => setNewStudent({ ...newStudent, familyMonthlyIncome: income })}
+                      name="family_monthly_income"
+                      checked={newStudent.family_monthly_income === income}
+                      onChange={() => setNewStudent({ ...newStudent, family_monthly_income: income })}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                     />
                     <span className="ml-2 text-sm text-gray-700">{income}</span>
                   </label>
                 ))}
+              </div>
+            </div>
+
+            {/* Siblings (from Oldest to Youngest) */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Siblings (from Oldest to Youngest)</label>
+              <div className="overflow-x-auto">
+                <table className="min-w-full border border-gray-200 rounded-lg">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Name</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Age</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">School Attended</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Status</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Occupation</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white">
+                    {newStudent.siblings.map((sibling, index) => (
+                      <tr key={index} className="hover:bg-gray-50">
+                        <td className="px-4 py-2">
+                          <input
+                            type="text"
+                            value={sibling.name || ''}
+                            onChange={(e) => handleSiblingChange(index, 'name', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                            placeholder="e.g., Maria Santos"
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <input
+                            type="text"
+                            value={sibling.age || ''}
+                            onChange={(e) => handleSiblingChange(index, 'age', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                            placeholder="e.g., 15"
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <input
+                            type="text"
+                            value={sibling.school || ''}
+                            onChange={(e) => handleSiblingChange(index, 'school', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                            placeholder="e.g., ABC High School"
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <input
+                            type="text"
+                            value={sibling.status || ''}
+                            onChange={(e) => handleSiblingChange(index, 'status', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                            placeholder="e.g., Student"
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <input
+                            type="text"
+                            value={sibling.occupation || ''}
+                            onChange={(e) => handleSiblingChange(index, 'occupation', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                            placeholder="e.g., None"
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <button
+                            type="button"
+                            onClick={() => removeSibling(index)}
+                            className="text-red-600 hover:text-red-800 text-sm font-medium"
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <button
+                  type="button"
+                  onClick={addSibling}
+                  className="mt-3 flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                >
+                  <FiPlus className="mr-1" /> Add Sibling
+                </button>
               </div>
             </div>
 
@@ -969,9 +1578,9 @@ export default function SeniorHighModal({
                       <label key={option} className="flex items-center">
                         <input
                           type="radio"
-                          name="residenceType"
-                          checked={newStudent.residenceType === option}
-                          onChange={() => setNewStudent({ ...newStudent, residenceType: option })}
+                          name="residence_type"
+                          checked={newStudent.residence_type === option}
+                          onChange={() => setNewStudent({ ...newStudent, residence_type: option })}
                           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                         />
                         <span className="ml-2 text-sm text-gray-700">{option}</span>
@@ -984,10 +1593,11 @@ export default function SeniorHighModal({
                   <label className="block text-sm font-medium text-gray-700 mb-2">Languages spoken at home:</label>
                   <input
                     type="text"
-                    name="languagesSpokenAtHome"
-                    value={newStudent.languagesSpokenAtHome || ''}
+                    name="languages_spoken_at_home"
+                    value={newStudent.languages_spoken_at_home || ''}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
+                    placeholder="e.g., Filipino, English"
                   />
                 </div>
               </div>
@@ -1004,20 +1614,20 @@ export default function SeniorHighModal({
                     <label key={option} className="flex items-center">
                       <input
                         type="checkbox"
-                        checked={newStudent.financialSupport?.includes(option) || false}
-                        onChange={() => handleCheckboxChange('financialSupport', option)}
+                        checked={newStudent.financial_support?.includes(option) || false}
+                        onChange={() => handleCheckboxChange('financial_support', option)}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       />
                       <span className="ml-2 text-sm text-gray-700">{option}</span>
                     </label>
                   ))}
                 </div>
-                {newStudent.financialSupport?.includes('Others') && (
+                {newStudent.financial_support?.includes('Others') && (
                   <div className="mt-2">
                     <input
                       type="text"
-                      name="otherFinancialSupport"
-                      value={newStudent.otherFinancialSupport || ''}
+                      name="other_relatives"
+                      value={newStudent.other_relatives || ''}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
                       placeholder="Please specify"
@@ -1060,8 +1670,8 @@ export default function SeniorHighModal({
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Special Talents</h3>
               <textarea
-                name="specialTalents"
-                value={newStudent.specialTalents || ''}
+                name="special_talents"
+                value={newStudent.special_talents || ''}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
                 rows={3}
@@ -1082,6 +1692,7 @@ export default function SeniorHighModal({
                     value={newStudent.guardianName || ''}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
+                    placeholder="e.g., Juan Dela Cruz"
                   />
                 </div>
 
@@ -1102,8 +1713,8 @@ export default function SeniorHighModal({
                     <div className="mt-2">
                       <input
                         type="text"
-                        name="otherGuardianRelationship"
-                        value={newStudent.otherGuardianRelationship || ''}
+                        name="child_residence_other"
+                        value={newStudent.child_residence_other || ''}
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
                         placeholder="Please specify"
@@ -1121,87 +1732,8 @@ export default function SeniorHighModal({
                   value={newStudent.guardianAddress || ''}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
+                  placeholder="e.g., 123 Guardian Street, City"
                 />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Siblings (from Oldest to Youngest)</label>
-              <div className="overflow-x-auto">
-                <table className="min-w-full border border-gray-200 rounded-lg">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Name</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Age</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">School Attended</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Status</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Occupation</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white">
-                    {newStudent.siblings.map((sibling, index) => (
-                      <tr key={index} className="hover:bg-gray-50">
-                        <td className="px-4 py-2">
-                          <input
-                            type="text"
-                            value={sibling.name || ''}
-                            onChange={(e) => handleSiblingChange(index, 'name', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
-                          />
-                        </td>
-                        <td className="px-4 py-2">
-                          <input
-                            type="text"
-                            value={sibling.age || ''}
-                            onChange={(e) => handleSiblingChange(index, 'age', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
-                          />
-                        </td>
-                        <td className="px-4 py-2">
-                          <input
-                            type="text"
-                            value={sibling.school || ''}
-                            onChange={(e) => handleSiblingChange(index, 'school', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
-                          />
-                        </td>
-                        <td className="px-4 py-2">
-                          <input
-                            type="text"
-                            value={sibling.status || ''}
-                            onChange={(e) => handleSiblingChange(index, 'status', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
-                          />
-                        </td>
-                        <td className="px-4 py-2">
-                          <input
-                            type="text"
-                            value={sibling.occupation || ''}
-                            onChange={(e) => handleSiblingChange(index, 'occupation', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
-                          />
-                        </td>
-                        <td className="px-4 py-2">
-                          <button
-                            type="button"
-                            onClick={() => removeSibling(index)}
-                            className="text-red-600 hover:text-red-800 text-sm font-medium"
-                          >
-                            Remove
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <button
-                  type="button"
-                  onClick={addSibling}
-                  className="mt-3 flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors"
-                >
-                  <FiPlus className="mr-1" /> Add Sibling
-                </button>
               </div>
             </div>
           </div>
@@ -1209,7 +1741,7 @@ export default function SeniorHighModal({
           {/* Educational Background */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
             <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">3</span>
+              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">4</span>
               Educational Background
             </h2>
 
@@ -1228,32 +1760,35 @@ export default function SeniorHighModal({
                     { level: 'preschool', label: 'Preschool' },
                     { level: 'elementary', label: 'Elementary' },
                     { level: 'highSchool', label: 'High School' },
-                    { level: 'seniorHigh', label: 'Senior High School' }
+                    ...(educationLevel !== 'Basic Education' ? [{ level: 'seniorHigh', label: 'Senior High School' }] : [])
                   ].map(({ level, label }) => (
                     <tr key={level} className="hover:bg-gray-50">
                       <td className="px-4 py-2 text-sm font-medium text-gray-700">{label}</td>
                       <td className="px-4 py-2">
                         <input
                           type="text"
-                          value={newStudent[level].school || ''}
-                          onChange={(e) => handleEducationChange(level, 'school', e.target.value)}
+                          value={newStudent[level].school_attended_or_address || ''}
+                          onChange={(e) => handleEducationChange(level, 'school_attended_or_address', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                          placeholder="e.g., School Name, Address"
                         />
                       </td>
                       <td className="px-4 py-2">
                         <input
                           type="text"
-                          value={newStudent[level].awards || ''}
-                          onChange={(e) => handleEducationChange(level, 'awards', e.target.value)}
+                          value={newStudent[level].awards_or_honors_received || ''}
+                          onChange={(e) => handleEducationChange(level, 'awards_or_honors_received', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                          placeholder="e.g., With Honors"
                         />
                       </td>
                       <td className="px-4 py-2">
                         <input
                           type="text"
-                          value={newStudent[level].year || ''}
-                          onChange={(e) => handleEducationChange(level, 'year', e.target.value)}
+                          value={newStudent[level].school_year_attended || ''}
+                          onChange={(e) => handleEducationChange(level, 'school_year_attended', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                          placeholder="e.g., 2018-2019"
                         />
                       </td>
                     </tr>
@@ -1266,7 +1801,7 @@ export default function SeniorHighModal({
           {/* Organizational Affiliations */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
             <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">4</span>
+              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">5</span>
               Organizational Affiliations
             </h2>
 
@@ -1286,12 +1821,8 @@ export default function SeniorHighModal({
                       <td className="px-4 py-2">
                         <input
                           type="text"
-                          value={org.schoolYear || ''}
-                          onChange={(e) => {
-                            const updatedOrgs = [...newStudent.organizations];
-                            updatedOrgs[index].schoolYear = e.target.value;
-                            setNewStudent({ ...newStudent, organizations: updatedOrgs });
-                          }}
+                          value={org.school_year || ''}
+                          onChange={(e) => handleOrganizationChange(index, 'school_year', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                           placeholder="SY 2023-2024"
                         />
@@ -1299,12 +1830,8 @@ export default function SeniorHighModal({
                       <td className="px-4 py-2">
                         <input
                           type="text"
-                          value={org.name || ''}
-                          onChange={(e) => {
-                            const updatedOrgs = [...newStudent.organizations];
-                            updatedOrgs[index].name = e.target.value;
-                            setNewStudent({ ...newStudent, organizations: updatedOrgs });
-                          }}
+                          value={org.organization_club || ''}
+                          onChange={(e) => handleOrganizationChange(index, 'organization_club', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                           placeholder="Organization name"
                         />
@@ -1313,11 +1840,7 @@ export default function SeniorHighModal({
                         <input
                           type="text"
                           value={org.designation || ''}
-                          onChange={(e) => {
-                            const updatedOrgs = [...newStudent.organizations];
-                            updatedOrgs[index].designation = e.target.value;
-                            setNewStudent({ ...newStudent, organizations: updatedOrgs });
-                          }}
+                          onChange={(e) => handleOrganizationChange(index, 'designation', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                           placeholder="Position/role"
                         />
@@ -1325,11 +1848,7 @@ export default function SeniorHighModal({
                       <td className="px-4 py-2">
                         <button
                           type="button"
-                          onClick={() => {
-                            const updated = [...newStudent.organizations];
-                            updated.splice(index, 1);
-                            setNewStudent({ ...newStudent, organizations: updated });
-                          }}
+                          onClick={() => removeOrganization(index)}
                           className="text-red-600 hover:text-red-800 text-sm font-medium"
                         >
                           Remove
@@ -1341,12 +1860,7 @@ export default function SeniorHighModal({
               </table>
               <button
                 type="button"
-                onClick={() => {
-                  setNewStudent({
-                    ...newStudent,
-                    organizations: [...(newStudent.organizations || []), { schoolYear: '', name: '', designation: '' }]
-                  });
-                }}
+                onClick={addOrganization}
                 className="mt-3 flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors"
               >
                 <FiPlus className="mr-1" /> Add Organization
@@ -1357,7 +1871,7 @@ export default function SeniorHighModal({
           {/* Health Information */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
             <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">5</span>
+              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">6</span>
               Health Information
             </h2>
 
@@ -1416,9 +1930,9 @@ export default function SeniorHighModal({
                 <label className="inline-flex items-center">
                   <input
                     type="radio"
-                    name="healthProblem"
-                    checked={newStudent.healthProblem === 'Yes'}
-                    onChange={() => setNewStudent({ ...newStudent, healthProblem: 'Yes' })}
+                    name="health_problem"
+                    checked={newStudent.health_problem === 'Yes'}
+                    onChange={() => setNewStudent({ ...newStudent, health_problem: 'Yes' })}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                   />
                   <span className="ml-2 text-sm text-gray-700">Yes</span>
@@ -1426,20 +1940,20 @@ export default function SeniorHighModal({
                 <label className="inline-flex items-center">
                   <input
                     type="radio"
-                    name="healthProblem"
-                    checked={newStudent.healthProblem === 'No'}
-                    onChange={() => setNewStudent({ ...newStudent, healthProblem: 'No' })}
+                    name="health_problem"
+                    checked={newStudent.health_problem === 'No'}
+                    onChange={() => setNewStudent({ ...newStudent, health_problem: 'No' })}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                   />
                   <span className="ml-2 text-sm text-gray-700">No</span>
                 </label>
               </div>
-              {newStudent.healthProblem === 'Yes' && (
+              {newStudent.health_problem === 'Yes' && (
                 <div className="mt-3">
                   <input
                     type="text"
-                    name="healthProblemDetails"
-                    value={newStudent.healthProblemDetails || ''}
+                    name="health_problem_details"
+                    value={newStudent.health_problem_details || ''}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
                     placeholder="Specify details"
@@ -1453,8 +1967,8 @@ export default function SeniorHighModal({
                 <label className="block text-sm font-medium text-gray-700 mb-1">When was your last visit to the doctor?</label>
                 <input
                   type="date"
-                  name="lastDoctorVisit"
-                  value={newStudent.lastDoctorVisit || ''}
+                  name="last_doctor_visit"
+                  value={newStudent.last_doctor_visit || ''}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
                 />
@@ -1463,10 +1977,11 @@ export default function SeniorHighModal({
                 <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
                 <input
                   type="text"
-                  name="lastDoctorVisitReason"
-                  value={newStudent.lastDoctorVisitReason || ''}
+                  name="last_doctor_visit_reason"
+                  value={newStudent.last_doctor_visit_reason || ''}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
+                  placeholder="e.g., Check-up"
                 />
               </div>
             </div>
@@ -1477,9 +1992,9 @@ export default function SeniorHighModal({
                 <label className="inline-flex items-center">
                   <input
                     type="radio"
-                    name="generalCondition"
-                    checked={newStudent.generalCondition === 'Good Condition'}
-                    onChange={() => setNewStudent({ ...newStudent, generalCondition: 'Good Condition' })}
+                    name="general_condition"
+                    checked={newStudent.general_condition === 'Good Condition'}
+                    onChange={() => setNewStudent({ ...newStudent, general_condition: 'Good Condition' })}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                   />
                   <span className="ml-2 text-sm text-gray-700">Good Condition</span>
@@ -1487,9 +2002,9 @@ export default function SeniorHighModal({
                 <label className="inline-flex items-center">
                   <input
                     type="radio"
-                    name="generalCondition"
-                    checked={newStudent.generalCondition === 'Under Medication'}
-                    onChange={() => setNewStudent({ ...newStudent, generalCondition: 'Under Medication' })}
+                    name="general_condition"
+                    checked={newStudent.general_condition === 'Under Medication'}
+                    onChange={() => setNewStudent({ ...newStudent, general_condition: 'Under Medication' })}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                   />
                   <span className="ml-2 text-sm text-gray-700">Under Medication</span>
@@ -1497,9 +2012,9 @@ export default function SeniorHighModal({
                 <label className="inline-flex items-center">
                   <input
                     type="radio"
-                    name="generalCondition"
-                    checked={newStudent.generalCondition === 'With Special Care/Attention'}
-                    onChange={() => setNewStudent({ ...newStudent, generalCondition: 'With Special Care/Attention' })}
+                    name="general_condition"
+                    checked={newStudent.general_condition === 'With Special Care/Attention'}
+                    onChange={() => setNewStudent({ ...newStudent, general_condition: 'With Special Care/Attention' })}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                   />
                   <span className="ml-2 text-sm text-gray-700">With Special Care/Attention</span>
@@ -1511,7 +2026,7 @@ export default function SeniorHighModal({
           {/* Test Results */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
             <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">6</span>
+              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">7</span>
               Test Results
             </h2>
 
@@ -1531,16 +2046,17 @@ export default function SeniorHighModal({
                       <td className="px-4 py-2">
                         <input
                           type="text"
-                          value={result.testName || ''}
-                          onChange={(e) => handleTestResultChange(index, 'testName', e.target.value)}
+                          value={result.test_name || ''}
+                          onChange={(e) => handleTestResultChange(index, 'test_name', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                          placeholder="e.g., IQ Test"
                         />
                       </td>
                       <td className="px-4 py-2">
                         <input
                           type="date"
-                          value={result.dateTaken || ''}
-                          onChange={(e) => handleTestResultChange(index, 'dateTaken', e.target.value)}
+                          value={result.date_taken || ''}
+                          onChange={(e) => handleTestResultChange(index, 'date_taken', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                         />
                       </td>
@@ -1550,16 +2066,13 @@ export default function SeniorHighModal({
                           value={result.rating || ''}
                           onChange={(e) => handleTestResultChange(index, 'rating', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                          placeholder="e.g., 95"
                         />
                       </td>
                       <td className="px-4 py-2">
                         <button
                           type="button"
-                          onClick={() => {
-                            const updated = [...newStudent.testResults];
-                            updated.splice(index, 1);
-                            setNewStudent({ ...newStudent, testResults: updated });
-                          }}
+                          onClick={() => removeTestResult(index)}
                           className="text-red-600 hover:text-red-800 text-sm font-medium"
                         >
                           Remove
@@ -1582,7 +2095,7 @@ export default function SeniorHighModal({
           {/* Privacy Notice */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
             <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">7</span>
+              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">8</span>
               Privacy Notice
             </h2>
 
@@ -1606,23 +2119,24 @@ export default function SeniorHighModal({
                 <label className="block text-sm font-medium text-gray-700 mb-1">Signature over printed name*</label>
                 <input
                   type="text"
-                  name="signature"
-                  value={newStudent.signature || ''}
+                  name="signature_name"
+                  value={newStudent.signature_name || ''}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border ${errors.signature ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition`}
+                  className={`w-full px-3 py-2 border ${errors.signature_name ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition`}
+                  placeholder="e.g., Juan Dela Cruz"
                 />
-                {errors.signature && <p className="mt-1 text-xs text-red-600">{errors.signature}</p>}
+                {errors.signature_name && <p className="mt-1 text-xs text-red-600">{errors.signature_name}</p>}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Date Signed*</label>
                 <input
                   type="date"
-                  name="signatureDate"
-                  value={newStudent.signatureDate || ''}
+                  name="signature_date"
+                  value={newStudent.signature_date || ''}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border ${errors.signatureDate ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition`}
+                  className={`w-full px-3 py-2 border ${errors.signature_date ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition`}
                 />
-                {errors.signatureDate && <p className="mt-1 text-xs text-red-600">{errors.signatureDate}</p>}
+                {errors.signature_date && <p className="mt-1 text-xs text-red-600">{errors.signature_date}</p>}
               </div>
             </div>
             {newStudent.age < 18 && (
@@ -1631,23 +2145,24 @@ export default function SeniorHighModal({
                   <label className="block text-sm font-medium text-gray-700 mb-1">Signature of Parent/Guardian over printed name*</label>
                   <input
                     type="text"
-                    name="parentSignature"
-                    value={newStudent.parentSignature || ''}
+                    name="parent_signature_name"
+                    value={newStudent.parent_signature_name || ''}
                     onChange={handleInputChange}
-                    className={`w-full px-3 py-2 border ${errors.parentSignature ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition`}
+                    className={`w-full px-3 py-2 border ${errors.parent_signature_name ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition`}
+                    placeholder="e.g., Maria Dela Cruz"
                   />
-                  {errors.parentSignature && <p className="mt-1 text-xs text-red-600">{errors.parentSignature}</p>}
+                  {errors.parent_signature_name && <p className="mt-1 text-xs text-red-600">{errors.parent_signature_name}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Date Signed*</label>
                   <input
                     type="date"
-                    name="parentSignatureDate"
-                    value={newStudent.parentSignatureDate || ''}
+                    name="parent_signature_date"
+                    value={newStudent.parent_signature_date || ''}
                     onChange={handleInputChange}
-                    className={`w-full px-3 py-2 border ${errors.parentSignatureDate ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition`}
+                    className={`w-full px-3 py-2 border ${errors.parent_signature_date ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition`}
                   />
-                  {errors.parentSignatureDate && <p className="mt-1 text-xs text-red-600">{errors.parentSignatureDate}</p>}
+                  {errors.parent_signature_date && <p className="mt-1 text-xs text-red-600">{errors.parent_signature_date}</p>}
                 </div>
               </div>
             )}
@@ -1671,7 +2186,12 @@ export default function SeniorHighModal({
               type="button"
               onClick={() => {
                 setShowModal(false);
-                setNewStudent(initialStudentState);
+                setNewStudent({
+                  ...initialStudentState,
+                  firstName: localStorage.getItem('firstName') || '',
+                  lastName: localStorage.getItem('lastName') || '',
+                });
+                setEducationLevel('');
                 setErrors({});
               }}
               className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors w-full sm:w-auto"
@@ -1692,4 +2212,6 @@ export default function SeniorHighModal({
       </div>
     </div>
   );
-}
+};
+
+export default StudentPDSModal;

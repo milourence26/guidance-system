@@ -1,0 +1,1615 @@
+import { useState } from 'react';
+import { FiX, FiPlus, FiUpload, FiUser, FiTrash2} from 'react-icons/fi';
+
+const initialStudentState = {
+  educationLevel: '',
+  schoolYear: '',
+  semester: '',
+  gradeLevel: '',
+  strand: '',
+  course: '',
+  yearLevel: '',
+  firstName: '',
+  lastName: '',
+  middleName: '',
+  nickname: '',
+  sex: '',
+  civil_status: '',
+  nationality: '',
+  contact_number: '',
+  email: '',
+  address: '',
+  city_address: '',
+  birth_date: '',
+  birth_place: '',
+  age: '',
+  religion: '',
+  emergency_contact: '',
+  emergency_relation: '',
+  emergency_number: '',
+  signature_name: '',
+  signature_date: '',
+  parent_signature_name: '',
+  parent_signature_date: '',
+  student_photo_url: '',
+  residence_type: '',
+  residence_owner: '',
+  languages_spoken_at_home: '',
+  special_talents: '',
+  living_with_parents: true,
+  studentType: '',
+  parentsMaritalStatus: '',
+  child_residing_with: '',
+  child_residence_other: '',
+  birth_order: '',
+  siblings_count: '',
+  brothers_count: '',
+  sisters_count: '',
+  step_brothers_count: '',
+  step_sisters_count: '',
+  adopted_count: '',
+  family_monthly_income: '',
+  financial_support: '',
+  relatives_at_home: '',
+  other_relatives: '',
+  total_relatives: '',
+  father: { last_name: '', first_name: '', middle_name: '', occupation: '', location: '', employment_type: '', status: '', highest_educational_attainment: '', specialization: '', post_graduate_studies: '' },
+  mother: { last_name: '', first_name: '', middle_name: '', occupation: '', location: '', employment_type: '', status: '', highest_educational_attainment: '', specialization: '', post_graduate_studies: '' },
+  baptism: { sacrament_type: 'baptism', received: false, date: '', church: '' },
+  firstCommunion: { sacrament_type: 'first communion', received: false, date: '', church: '' },
+  confirmation: { sacrament_type: 'confirmation', received: false, date: '', church: '' },
+  leisureActivities: '',
+  otherLeisureActivity: '',
+  guardianName: '',
+  guardianRelationship: '',
+  guardianAddress: '',
+  siblings: [],
+  preschool: { level: 'Preschool', school_attended_or_address: '', awards_or_honors_received: '', school_year_attended: '' },
+  elementary: { level: 'Grade School', school_attended_or_address: '', awards_or_honors_received: '', school_year_attended: '' },
+  highSchool: { level: 'High School', school_attended_or_address: '', awards_or_honors_received: '', school_year_attended: '' },
+  seniorHigh: { level: 'Senior High School', school_attended_or_address: '', awards_or_honors_received: '', school_year_attended: '' },
+  organizations: [],
+  height: '',
+  weight: '',
+  physicalCondition: '',
+  health_problem: '',
+  health_problem_details: '',
+  last_doctor_visit: '',
+  last_doctor_visit_reason: '',
+  general_condition: '',
+  testResults: [],
+};
+
+const StudentPDSModal = ({ showModal, setShowModal, onAddStudent }) => {
+  const [newStudent, setNewStudent] = useState({
+    ...initialStudentState,
+    firstName: localStorage.getItem('firstName') || '',
+    lastName: localStorage.getItem('lastName') || '',
+  });
+  const [educationLevel, setEducationLevel] = useState('');
+  const [errors, setErrors] = useState({});
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    if (name.includes('.')) {
+      const [parent, child] = name.split('.');
+      setNewStudent((prev) => ({
+        ...prev,
+        [parent]: { ...prev[parent], [child]: type === 'checkbox' ? checked : value },
+      }));
+    } else {
+      setNewStudent((prev) => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value,
+      }));
+    }
+  };
+
+  const handleSiblingChange = (index, field, value) => {
+    const updatedSiblings = [...newStudent.siblings];
+    updatedSiblings[index] = { ...updatedSiblings[index], [field]: value };
+    setNewStudent((prev) => ({ ...prev, siblings: updatedSiblings }));
+  };
+
+  const addSibling = () => {
+    setNewStudent((prev) => ({
+      ...prev,
+      siblings: [...prev.siblings, { name: '', age: '', school: '', status: '', occupation: '' }],
+    }));
+  };
+
+  const removeSibling = (index) => {
+    setNewStudent((prev) => ({
+      ...prev,
+      siblings: prev.siblings.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleOrganizationChange = (index, field, value) => {
+    const updatedOrganizations = [...newStudent.organizations];
+    updatedOrganizations[index] = { ...updatedOrganizations[index], [field]: value };
+    setNewStudent((prev) => ({ ...prev, organizations: updatedOrganizations }));
+  };
+
+  const addOrganization = () => {
+    setNewStudent((prev) => ({
+      ...prev,
+      organizations: [...prev.organizations, { school_year: '', organization_club: '', designation: '' }],
+    }));
+  };
+
+  const removeOrganization = (index) => {
+    setNewStudent((prev) => ({
+      ...prev,
+      organizations: prev.organizations.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleTestResultChange = (index, field, value) => {
+    const updatedTestResults = [...newStudent.testResults];
+    updatedTestResults[index] = { ...updatedTestResults[index], [field]: value };
+    setNewStudent((prev) => ({ ...prev, testResults: updatedTestResults }));
+  };
+
+  const addTestResult = () => {
+    setNewStudent((prev) => ({
+      ...prev,
+      testResults: [...prev.testResults, { test_name: '', date_taken: '', rating: '' }],
+    }));
+  };
+
+  const removeTestResult = (index) => {
+    setNewStudent((prev) => ({
+      ...prev,
+      testResults: prev.testResults.filter((_, i) => i !== index),
+    }));
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    if (!educationLevel) newErrors.educationLevel = 'Education level is required';
+    if (!newStudent.schoolYear) newErrors.schoolYear = 'School year is required';
+    if (educationLevel === 'Higher Education' && !newStudent.semester) newErrors.semester = 'Semester is required';
+    if (educationLevel !== 'Higher Education' && !newStudent.gradeLevel) newErrors.gradeLevel = 'Grade level is required';
+    if (educationLevel === 'Senior High' && !newStudent.strand) newErrors.strand = 'Strand is required';
+    if (educationLevel === 'Higher Education' && !newStudent.course) newErrors.course = 'Course is required';
+    if (educationLevel === 'Higher Education' && !newStudent.yearLevel) newErrors.yearLevel = 'Year level is required';
+    if (educationLevel === 'Higher Education' && !newStudent.civil_status) newErrors.civil_status = 'Civil status is required';
+    if (educationLevel === 'Higher Education' && !newStudent.email) newErrors.email = 'Email is required';
+    if (!newStudent.firstName) newErrors.firstName = 'First name is required';
+    if (!newStudent.lastName) newErrors.lastName = 'Last name is required';
+    if (!newStudent.studentType) newErrors.studentType = 'Student type is required';
+    if (!newStudent.living_with_parents && !newStudent.guardianName) newErrors.guardianName = 'Guardian name is required';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleAddStudent = async () => {
+    if (!validateForm()) return;
+    try {
+      const response = await fetch('/api/students', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...newStudent, educationLevel }),
+      });
+      if (response.ok) {
+        const studentData = await response.json();
+        localStorage.setItem('firstName', newStudent.firstName);
+        localStorage.setItem('lastName', newStudent.lastName);
+        onAddStudent(studentData);
+        setShowModal(false);
+        setNewStudent({
+          ...initialStudentState,
+          firstName: localStorage.getItem('firstName') || '',
+          lastName: localStorage.getItem('lastName') || '',
+        });
+        setEducationLevel('');
+        setErrors({});
+      } else {
+        const errorData = await response.json();
+        setErrors({ submit: errorData.message || 'Failed to add student' });
+      }
+    } catch (error) {
+      setErrors({ submit: 'Error submitting form' });
+    }
+  };
+
+  if (!showModal) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
+      <div className="bg-white w-full max-w-4xl rounded-xl shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <h1 className="text-2xl font-bold text-gray-800 mb-6">Student Personal Data Sheet</h1>
+          
+          {/* Education Level Selection */}
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">1</span>
+              Education Level
+            </h2>
+            <select
+              value={educationLevel}
+              onChange={(e) => setEducationLevel(e.target.value)}
+              className={`w-full px-4 py-2 border ${errors.educationLevel ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 text-sm`}
+            >
+              <option value="">Select Education Level</option>
+              <option value="Basic Education">Basic Education</option>
+              <option value="Senior High">Senior High</option>
+              <option value="Higher Education">Higher Education</option>
+            </select>
+            {errors.educationLevel && <p className="mt-1 text-xs text-red-600">{errors.educationLevel}</p>}
+          </div>
+
+          {/* Personal Information */}
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">2</span>
+              Personal Information
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">School Year*</label>
+                <input
+                  type="text"
+                  name="schoolYear"
+                  value={newStudent.schoolYear}
+                  onChange={handleInputChange}
+                  className={`w-full px-4 py-2 border ${errors.schoolYear ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 text-sm`}
+                  placeholder="e.g., 2023-2024"
+                />
+                {errors.schoolYear && <p className="mt-1 text-xs text-red-600">{errors.schoolYear}</p>}
+              </div>
+              {educationLevel === 'Higher Education' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Semester*</label>
+                  <select
+                    name="semester"
+                    value={newStudent.semester}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-2 border ${errors.semester ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 text-sm`}
+                  >
+                    <option value="">Select Semester</option>
+                    <option value="1st Semester">1st Semester</option>
+                    <option value="2nd Semester">2nd Semester</option>
+                  </select>
+                  {errors.semester && <p className="mt-1 text-xs text-red-600">{errors.semester}</p>}
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {educationLevel === 'Higher Education' ? 'Course & Year Level*' : 'Grade Level & Strand*'}
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(educationLevel === 'Basic Education' || educationLevel === 'Senior High') && (
+                    <select
+                      name="gradeLevel"
+                      value={newStudent.gradeLevel}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-2 border ${errors.gradeLevel ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 text-sm`}
+                    >
+                      <option value="">Select Grade</option>
+                      <option value="Grade 1">Grade 1</option>
+                      <option value="Grade 2">Grade 2</option>
+                      <option value="Grade 3">Grade 3</option>
+                      <option value="Grade 4">Grade 4</option>
+                      <option value="Grade 5">Grade 5</option>
+                      <option value="Grade 6">Grade 6</option>
+                      <option value="Grade 7">Grade 7</option>
+                      <option value="Grade 8">Grade 8</option>
+                      <option value="Grade 9">Grade 9</option>
+                      <option value="Grade 10">Grade 10</option>
+                      <option value="Grade 11">Grade 11</option>
+                      <option value="Grade 12">Grade 12</option>
+                    </select>
+                  )}
+                  {educationLevel === 'Higher Education' && (
+                    <select
+                      name="yearLevel"
+                      value={newStudent.yearLevel}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-2 border ${errors.yearLevel ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 text-sm`}
+                    >
+                      <option value="">Select Year</option>
+                      <option value="1st Year">1st Year</option>
+                      <option value="2nd Year">2nd Year</option>
+                      <option value="3rd Year">3rd Year</option>
+                      <option value="4th Year">4th Year</option>
+                    </select>
+                  )}
+                  {educationLevel === 'Senior High' && (
+                    <input
+                      type="text"
+                      name="strand"
+                      value={newStudent.strand}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-2 border ${errors.strand ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 text-sm`}
+                      placeholder="e.g., STEM"
+                    />
+                  )}
+                  {educationLevel === 'Higher Education' && (
+                    <input
+                      type="text"
+                      name="course"
+                      value={newStudent.course}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-2 border ${errors.course ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 text-sm`}
+                      placeholder="e.g., BS Computer Science"
+                    />
+                  )}
+                </div>
+                {errors.gradeLevel && <p className="mt-1 text-xs text-red-600">{errors.gradeLevel}</p>}
+                {errors.yearLevel && <p className="mt-1 text-xs text-red-600">{errors.yearLevel}</p>}
+                {errors.strand && <p className="mt-1 text-xs text-red-600">{errors.strand}</p>}
+                {errors.course && <p className="mt-1 text-xs text-red-600">{errors.course}</p>}
+              </div>
+              {educationLevel === 'Higher Education' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Nickname</label>
+                    <input
+                      type="text"
+                      name="nickname"
+                      value={newStudent.nickname}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                      placeholder="e.g., Alex"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Civil Status*</label>
+                    <select
+                      name="civil_status"
+                      value={newStudent.civil_status}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-2 border ${errors.civil_status ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 text-sm`}
+                    >
+                      <option value="">Select</option>
+                      <option value="Single">Single</option>
+                      <option value="Married">Married</option>
+                      <option value="Widowed">Widowed</option>
+                      <option value="Separated">Separated</option>
+                    </select>
+                    {errors.civil_status && <p className="mt-1 text-xs text-red-600">{errors.civil_status}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Email*</label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={newStudent.email}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-2 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 text-sm`}
+                      placeholder="e.g., student@example.com"
+                    />
+                    {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">City Address (if boarding)</label>
+                    <input
+                      type="text"
+                      name="city_address"
+                      value={newStudent.city_address}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                      placeholder="e.g., 123 City St, Manila"
+                    />
+                  </div>
+                </>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">First Name*</label>
+                <input
+                  type="text"
+                  name="firstName"
+                  value={newStudent.firstName}
+                  onChange={handleInputChange}
+                  className={`w-full px-4 py-2 border ${errors.firstName ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 text-sm`}
+                  placeholder="e.g., John"
+                />
+                {errors.firstName && <p className="mt-1 text-xs text-red-600">{errors.firstName}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Last Name*</label>
+                <input
+                  type="text"
+                  name="lastName"
+                  value={newStudent.lastName}
+                  onChange={handleInputChange}
+                  className={`w-full px-4 py-2 border ${errors.lastName ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 text-sm`}
+                  placeholder="e.g., Dela Cruz"
+                />
+                {errors.lastName && <p className="mt-1 text-xs text-red-600">{errors.lastName}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Middle Name</label>
+                <input
+                  type="text"
+                  name="middleName"
+                  value={newStudent.middleName}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Cruz"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Sex*</label>
+                <select
+                  name="sex"
+                  value={newStudent.sex}
+                  onChange={handleInputChange}
+                  className={`w-full px-4 py-2 border ${errors.sex ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 text-sm`}
+                >
+                  <option value="">Select</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+                {errors.sex && <p className="mt-1 text-xs text-red-600">{errors.sex}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Nationality</label>
+                <input
+                  type="text"
+                  name="nationality"
+                  value={newStudent.nationality}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Filipino"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Contact Number</label>
+                <input
+                  type="text"
+                  name="contact_number"
+                  value={newStudent.contact_number}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., +639123456789"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                <textarea
+                  name="address"
+                  value={newStudent.address}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., 123 Main St, City, Province"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Birth Date</label>
+                <input
+                  type="date"
+                  name="birth_date"
+                  value={newStudent.birth_date}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Birth Place</label>
+                <input
+                  type="text"
+                  name="birth_place"
+                  value={newStudent.birth_place}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Manila"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Age</label>
+                <input
+                  type="number"
+                  name="age"
+                  value={newStudent.age}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., 18"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Religion</label>
+                <input
+                  type="text"
+                  name="religion"
+                  value={newStudent.religion}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Catholic"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Emergency Contact</label>
+                <input
+                  type="text"
+                  name="emergency_contact"
+                  value={newStudent.emergency_contact}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Jane Doe"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Emergency Relation</label>
+                <input
+                  type="text"
+                  name="emergency_relation"
+                  value={newStudent.emergency_relation}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Mother"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Emergency Number</label>
+                <input
+                  type="text"
+                  name="emergency_number"
+                  value={newStudent.emergency_number}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., +639987654321"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Student Photo URL</label>
+                <input
+                  type="text"
+                  name="student_photo_url"
+                  value={newStudent.student_photo_url}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., https://example.com/photo.jpg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Residence Type</label>
+                <input
+                  type="text"
+                  name="residence_type"
+                  value={newStudent.residence_type}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., House"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Residence Owner</label>
+                <input
+                  type="text"
+                  name="residence_owner"
+                  value={newStudent.residence_owner}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., John Doe"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Languages Spoken at Home</label>
+                <input
+                  type="text"
+                  name="languages_spoken_at_home"
+                  value={newStudent.languages_spoken_at_home}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., English, Filipino"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Special Talents</label>
+                <input
+                  type="text"
+                  name="special_talents"
+                  value={newStudent.special_talents}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Singing, Dancing"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Living with Parents</label>
+                <input
+                  type="checkbox"
+                  name="living_with_parents"
+                  checked={newStudent.living_with_parents}
+                  onChange={handleInputChange}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Student Type*</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {['New', 'Transferee', 'Returnee', 'Old'].map((type) => (
+                    <label key={type} className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        name="studentType"
+                        checked={newStudent.studentType === type}
+                        onChange={() => setNewStudent({ ...newStudent, studentType: type })}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                      />
+                      <span className="text-sm text-gray-700">{type}</span>
+                    </label>
+                  ))}
+                </div>
+                {errors.studentType && <p className="mt-1 text-xs text-red-600">{errors.studentType}</p>}
+              </div>
+            </div>
+          </div>
+
+          {/* Family Information */}
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">3</span>
+              Family Information
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Parents' Marital Status</label>
+                <input
+                  type="text"
+                  name="parentsMaritalStatus"
+                  value={newStudent.parentsMaritalStatus}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Married"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Child Residing With</label>
+                <input
+                  type="text"
+                  name="child_residing_with"
+                  value={newStudent.child_residing_with}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Parents"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Other Residence</label>
+                <input
+                  type="text"
+                  name="child_residence_other"
+                  value={newStudent.child_residence_other}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Grandparents' House"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Birth Order</label>
+                <input
+                  type="text"
+                  name="birth_order"
+                  value={newStudent.birth_order}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Eldest"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Siblings Count</label>
+                <input
+                  type="number"
+                  name="siblings_count"
+                  value={newStudent.siblings_count}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., 2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Brothers Count</label>
+                <input
+                  type="number"
+                  name="brothers_count"
+                  value={newStudent.brothers_count}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., 1"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Sisters Count</label>
+                <input
+                  type="number"
+                  name="sisters_count"
+                  value={newStudent.sisters_count}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., 1"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Step Brothers Count</label>
+                <input
+                  type="number"
+                  name="step_brothers_count"
+                  value={newStudent.step_brothers_count}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., 0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Step Sisters Count</label>
+                <input
+                  type="number"
+                  name="step_sisters_count"
+                  value={newStudent.step_sisters_count}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., 0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Adopted Count</label>
+                <input
+                  type="number"
+                  name="adopted_count"
+                  value={newStudent.adopted_count}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., 0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Family Monthly Income</label>
+                <select
+                  name="family_monthly_income"
+                  value={newStudent.family_monthly_income}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                >
+                  <option value="">Select</option>
+                  <option value="Below ₱10,000.00">Below ₱10,000.00</option>
+                  <option value="₱10,001 - ₱13,000">₱10,001 - ₱13,000</option>
+                  <option value="₱13,001 - ₱15,000">₱13,001 - ₱15,000</option>
+                  <option value="₱15,001 - ₱18,000">₱15,001 - ₱18,000</option>
+                  <option value="₱18,001 - ₱21,000">₱18,001 - ₱21,000</option>
+                  <option value="₱21,001 - ₱24,000">₱21,001 - ₱24,000</option>
+                  <option value="₱24,001 - ₱27,000">₱24,001 - ₱27,000</option>
+                  <option value="₱27,001 - ₱30,000">₱27,001 - ₱30,000</option>
+                  <option value="Above ₱30,000">Above ₱30,000</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Financial Support</label>
+                <input
+                  type="text"
+                  name="financial_support"
+                  value={newStudent.financial_support}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Parents, Grandparents, Others"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Relatives at Home</label>
+                <textarea
+                  name="relatives_at_home"
+                  value={newStudent.relatives_at_home}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Parents, Siblings"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Other Relatives</label>
+                <textarea
+                  name="other_relatives"
+                  value={newStudent.other_relatives}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Grandparents"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Total Relatives</label>
+                <input
+                  type="number"
+                  name="total_relatives"
+                  value={newStudent.total_relatives}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., 5"
+                />
+              </div>
+            </div>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Siblings</label>
+              <table className="min-w-full border border-gray-200 rounded-lg">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Name</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Age</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">School</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Status</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Occupation</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {newStudent.siblings.map((sibling, index) => (
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="px-4 py-2">
+                        <input
+                          type="text"
+                          value={sibling.name}
+                          onChange={(e) => handleSiblingChange(index, 'name', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                          placeholder="e.g., Jane Doe"
+                        />
+                      </td>
+                      <td className="px-4 py-2">
+                        <input
+                          type="number"
+                          value={sibling.age}
+                          onChange={(e) => handleSiblingChange(index, 'age', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                          placeholder="e.g., 15"
+                        />
+                      </td>
+                      <td className="px-4 py-2">
+                        <input
+                          type="text"
+                          value={sibling.school}
+                          onChange={(e) => handleSiblingChange(index, 'school', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                          placeholder="e.g., ABC High School"
+                        />
+                      </td>
+                      <td className="px-4 py-2">
+                        <input
+                          type="text"
+                          value={sibling.status}
+                          onChange={(e) => handleSiblingChange(index, 'status', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                          placeholder="e.g., Student"
+                        />
+                      </td>
+                      <td className="px-4 py-2">
+                        <input
+                          type="text"
+                          value={sibling.occupation}
+                          onChange={(e) => handleSiblingChange(index, 'occupation', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                          placeholder="e.g., None"
+                        />
+                      </td>
+                      <td className="px-4 py-2">
+                        <button
+                          onClick={() => removeSibling(index)}
+                          className="text-red-600 hover:text-red-800 text-sm"
+                        >
+                          <FiTrash2 />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <button
+                onClick={addSibling}
+                className="mt-4 flex items-center text-blue-600 hover:text-blue-800 text-sm"
+              >
+                <FiPlus className="mr-1" /> Add Sibling
+              </button>
+            </div>
+          </div>
+
+          {/* Parents Information */}
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">4</span>
+              Parents Information
+            </h2>
+            <h3 className="text-sm font-medium text-gray-700 mb-2">Father</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                <input
+                  type="text"
+                  name="father.last_name"
+                  value={newStudent.father.last_name}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Doe"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                <input
+                  type="text"
+                  name="father.first_name"
+                  value={newStudent.father.first_name}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., John"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Middle Name</label>
+                <input
+                  type="text"
+                  name="father.middle_name"
+                  value={newStudent.father.middle_name}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Cruz"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Occupation</label>
+                <input
+                  type="text"
+                  name="father.occupation"
+                  value={newStudent.father.occupation}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Engineer"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                <input
+                  type="text"
+                  name="father.location"
+                  value={newStudent.father.location}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Manila"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Employment Type</label>
+                <input
+                  type="text"
+                  name="father.employment_type"
+                  value={newStudent.father.employment_type}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Full-time"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                <input
+                  type="text"
+                  name="father.status"
+                  value={newStudent.father.status}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Living"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Highest Educational Attainment</label>
+                <input
+                  type="text"
+                  name="father.highest_educational_attainment"
+                  value={newStudent.father.highest_educational_attainment}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Bachelor's Degree"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Specialization</label>
+                <input
+                  type="text"
+                  name="father.specialization"
+                  value={newStudent.father.specialization}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Civil Engineering"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Post Graduate Studies</label>
+                <select
+                  name="father.post_graduate_studies"
+                  value={newStudent.father.post_graduate_studies}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                >
+                  <option value="">Select</option>
+                  <option value="MS/MA">MS/MA</option>
+                  <option value="PhD">PhD</option>
+                </select>
+              </div>
+            </div>
+            <h3 className="text-sm font-medium text-gray-700 mb-2">Mother</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                <input
+                  type="text"
+                  name="mother.last_name"
+                  value={newStudent.mother.last_name}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Doe"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                <input
+                  type="text"
+                  name="mother.first_name"
+                  value={newStudent.mother.first_name}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Jane"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Middle Name</label>
+                <input
+                  type="text"
+                  name="mother.middle_name"
+                  value={newStudent.mother.middle_name}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Cruz"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Occupation</label>
+                <input
+                  type="text"
+                  name="mother.occupation"
+                  value={newStudent.mother.occupation}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Teacher"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                <input
+                  type="text"
+                  name="mother.location"
+                  value={newStudent.mother.location}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Manila"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Employment Type</label>
+                <input
+                  type="text"
+                  name="mother.employment_type"
+                  value={newStudent.mother.employment_type}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Full-time"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                <input
+                  type="text"
+                  name="mother.status"
+                  value={newStudent.mother.status}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Living"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Highest Educational Attainment</label>
+                <input
+                  type="text"
+                  name="mother.highest_educational_attainment"
+                  value={newStudent.mother.highest_educational_attainment}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Bachelor's Degree"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Specialization</label>
+                <input
+                  type="text"
+                  name="mother.specialization"
+                  value={newStudent.mother.specialization}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Education"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Post Graduate Studies</label>
+                <select
+                  name="mother.post_graduate_studies"
+                  value={newStudent.mother.post_graduate_studies}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                >
+                  <option value="">Select</option>
+                  <option value="MS/MA">MS/MA</option>
+                  <option value="PhD">PhD</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Sacraments */}
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">5</span>
+              Sacraments
+            </h2>
+            {['baptism', 'firstCommunion', 'confirmation'].map((sacrament) => (
+              <div key={sacrament} className="mb-4">
+                <h3 className="text-sm font-medium text-gray-700 mb-2 capitalize">{sacrament.replace(/([A-Z])/g, ' $1')}</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Received</label>
+                    <input
+                      type="checkbox"
+                      name={`${sacrament}.received`}
+                      checked={newStudent[sacrament].received}
+                      onChange={handleInputChange}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                    />
+                  </div>
+                  {newStudent[sacrament].received && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                        <input
+                          type="date"
+                          name={`${sacrament}.date`}
+                          value={newStudent[sacrament].date}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Church</label>
+                        <input
+                          type="text"
+                          name={`${sacrament}.church`}
+                          value={newStudent[sacrament].church}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                          placeholder="e.g., St. John Church"
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Guardian Information (if not living with parents) */}
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">6</span>
+              Guardian Information (If Not Living with Parents)
+            </h2>
+            {!newStudent.living_with_parents && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Guardian Name*</label>
+                  <input
+                    type="text"
+                    name="guardianName"
+                    value={newStudent.guardianName}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-2 border ${errors.guardianName ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 text-sm`}
+                    placeholder="e.g., Mary Smith"
+                  />
+                  {errors.guardianName && <p className="mt-1 text-xs text-red-600">{errors.guardianName}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Relationship</label>
+                  <input
+                    type="text"
+                    name="guardianRelationship"
+                    value={newStudent.guardianRelationship}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                    placeholder="e.g., Aunt"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                  <textarea
+                    name="guardianAddress"
+                    value={newStudent.guardianAddress}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                    placeholder="e.g., 456 City St, Manila"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Educational Background */}
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">7</span>
+              Educational Background
+            </h2>
+            {['preschool', 'elementary', 'highSchool', 'seniorHigh'].map((level) => (
+              <div key={level} className="mb-4">
+                <h3 className="text-sm font-medium text-gray-700 mb-2 capitalize">{level.replace(/([A-Z])/g, ' $1')}</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">School Attended/Address</label>
+                    <input
+                      type="text"
+                      name={`${level}.school_attended_or_address`}
+                      value={newStudent[level].school_attended_or_address}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                      placeholder="e.g., ABC School, Manila"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Awards/Honors Received</label>
+                    <textarea
+                      name={`${level}.awards_or_honors_received`}
+                      value={newStudent[level].awards_or_honors_received}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                      placeholder="e.g., Valedictorian"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">School Year Attended</label>
+                    <input
+                      type="text"
+                      name={`${level}.school_year_attended`}
+                      value={newStudent[level].school_year_attended}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                      placeholder="e.g., 2018-2019"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Organizations */}
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">8</span>
+              Organizations
+            </h2>
+            <table className="min-w-full border border-gray-200 rounded-lg">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">School Year</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Organization/Club</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Designation</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {newStudent.organizations.map((org, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="px-4 py-2">
+                      <input
+                        type="text"
+                        value={org.school_year}
+                        onChange={(e) => handleOrganizationChange(index, 'school_year', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                        placeholder="e.g., 2023-2024"
+                      />
+                    </td>
+                    <td className="px-4 py-2">
+                      <input
+                        type="text"
+                        value={org.organization_club}
+                        onChange={(e) => handleOrganizationChange(index, 'organization_club', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                        placeholder="e.g., Science Club"
+                      />
+                    </td>
+                    <td className="px-4 py-2">
+                      <input
+                        type="text"
+                        value={org.designation}
+                        onChange={(e) => handleOrganizationChange(index, 'designation', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                        placeholder="e.g., President"
+                      />
+                    </td>
+                    <td className="px-4 py-2">
+                      <button
+                        onClick={() => removeOrganization(index)}
+                        className="text-red-600 hover:text-red-800 text-sm"
+                      >
+                        <FiTrash2 />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <button
+              onClick={addOrganization}
+              className="mt-4 flex items-center text-blue-600 hover:text-blue-800 text-sm"
+            >
+              <FiPlus className="mr-1" /> Add Organization
+            </button>
+          </div>
+
+          {/* Leisure Activities */}
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">9</span>
+              Leisure Activities
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Activities</label>
+                <textarea
+                  name="leisureActivities"
+                  value={newStudent.leisureActivities}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Reading, Sports"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Other Activity</label>
+                <input
+                  type="text"
+                  name="otherLeisureActivity"
+                  value={newStudent.otherLeisureActivity}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Painting"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Health Information */}
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">10</span>
+              Health Information
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Height</label>
+                <input
+                  type="text"
+                  name="height"
+                  value={newStudent.height}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., 5'6\"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Weight</label>
+                <input
+                  type="text"
+                  name="weight"
+                  value={newStudent.weight}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., 60 kg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Physical Condition</label>
+                <input
+                  type="text"
+                  name="physicalCondition"
+                  value={newStudent.physicalCondition}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Healthy"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Health Problem</label>
+                <input
+                  type="text"
+                  name="health_problem"
+                  value={newStudent.health_problem}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Asthma"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Health Problem Details</label>
+                <textarea
+                  name="health_problem_details"
+                  value={newStudent.health_problem_details}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Requires inhaler"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Last Doctor Visit</label>
+                <input
+                  type="date"
+                  name="last_doctor_visit"
+                  value={newStudent.last_doctor_visit}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Reason for Last Doctor Visit</label>
+                <input
+                  type="text"
+                  name="last_doctor_visit_reason"
+                  value={newStudent.last_doctor_visit_reason}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Routine checkup"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">General Condition</label>
+                <input
+                  type="text"
+                  name="general_condition"
+                  value={newStudent.general_condition}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Good"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Test Results */}
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">11</span>
+              Test Results
+            </h2>
+            <table className="min-w-full border border-gray-200 rounded-lg">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Test Name</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Date Taken</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Rating</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {newStudent.testResults.map((result, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="px-4 py-2">
+                      <input
+                        type="text"
+                        value={result.test_name}
+                        onChange={(e) => handleTestResultChange(index, 'test_name', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                        placeholder="e.g., IQ Test"
+                      />
+                    </td>
+                    <td className="px-4 py-2">
+                      <input
+                        type="date"
+                        value={result.date_taken}
+                        onChange={(e) => handleTestResultChange(index, 'date_taken', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                      />
+                    </td>
+                    <td className="px-4 py-2">
+                      <input
+                        type="text"
+                        value={result.rating}
+                        onChange={(e) => handleTestResultChange(index, 'rating', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                        placeholder="e.g., 90"
+                      />
+                    </td>
+                    <td className="px-4 py-2">
+                      <button
+                        onClick={() => removeTestResult(index)}
+                        className="text-red-600 hover:text-red-800 text-sm"
+                      >
+                        <FiTrash2 />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <button
+              onClick={addTestResult}
+              className="mt-4 flex items-center text-blue-600 hover:text-blue-800 text-sm"
+            >
+              <FiPlus className="mr-1" /> Add Test Result
+            </button>
+          </div>
+
+          {/* Signature */}
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">12</span>
+              Signature
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Student Signature</label>
+                <input
+                  type="text"
+                  name="signature_name"
+                  value={newStudent.signature_name}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., John Doe"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                <input
+                  type="date"
+                  name="signature_date"
+                  value={newStudent.signature_date}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Parent/Guardian Signature</label>
+                <input
+                  type="text"
+                  name="parent_signature_name"
+                  value={newStudent.parent_signature_name}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="e.g., Jane Doe"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                <input
+                  type="date"
+                  name="parent_signature_date"
+                  value={newStudent.parent_signature_date}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Form Submission Buttons */}
+          <div className="flex justify-end space-x-4">
+            <button
+              onClick={() => setShowModal(false)}
+              className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 text-sm"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleAddStudent}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+            >
+              Submit
+            </button>
+          </div>
+          {errors.submit && <p className="mt-4 text-xs text-red-600">{errors.submit}</p>}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default StudentPDSModal;

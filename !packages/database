@@ -1,271 +1,3 @@
-//neon sql portgrs
-CREATE TABLE students (
-    student_id SERIAL PRIMARY KEY,
-    student_type VARCHAR(10) NOT NULL CHECK (student_type IN ('New', 'Transferee', 'Returnee', 'Old')),
-    school_year VARCHAR(20),
-    course VARCHAR(100) NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    
-    last_name VARCHAR(100) NOT NULL,
-    given_name VARCHAR(100) NOT NULL,
-    middle_name VARCHAR(100),
-    nickname VARCHAR(50),
-    gender VARCHAR(10) CHECK (gender IN ('Male', 'Female', 'Other')),
-    nationality VARCHAR(50),
-    age INTEGER,
-    home_address TEXT,
-    city_address TEXT,
-    birth_month VARCHAR(20),
-    birth_day INTEGER,
-    birth_year INTEGER,
-    birth_place VARCHAR(100),
-    contact_number VARCHAR(20),
-    email VARCHAR(100),
-    religion VARCHAR(50),
-    civil_status VARCHAR(20) CHECK (civil_status IN ('Single', 'Married', 'Separated', 'Widowed')),
-    
-    emergency_contact VARCHAR(100),
-    emergency_relation VARCHAR(50),
-    emergency_number VARCHAR(20),
-    
-    student_photo_url TEXT,
-    
-    father_last_name VARCHAR(100),
-    father_first_name VARCHAR(100),
-    father_middle_name VARCHAR(100),
-    father_occupation VARCHAR(100),
-    father_status VARCHAR(20) CHECK (father_status IN ('Employed', 'Unemployed', 'Retired', 'Disabled', 'Deceased')),
-    father_location VARCHAR(10) CHECK (father_location IN ('Overseas', 'Local')),
-    father_employment_type VARCHAR(20) CHECK (father_employment_type IN ('Private', 'Government')),
-    father_education VARCHAR(50),
-    father_specialization VARCHAR(100),
-    
-    mother_last_name VARCHAR(100),
-    mother_first_name VARCHAR(100),
-    mother_middle_name VARCHAR(100),
-    mother_occupation VARCHAR(100),
-    mother_status VARCHAR(20) CHECK (mother_status IN ('Employed', 'Unemployed', 'Retired', 'Disabled', 'Deceased')),
-    mother_location VARCHAR(10) CHECK (mother_location IN ('Overseas', 'Local')),
-    mother_employment_type VARCHAR(20) CHECK (mother_employment_type IN ('Private', 'Government')),
-    mother_education VARCHAR(50),
-    mother_specialization VARCHAR(100),
-    
-    parents_marital_status VARCHAR(50),
-    residence_type VARCHAR(10) CHECK (residence_type IN ('rented', 'owned')),
-    languages_spoken TEXT,
-    family_income VARCHAR(50),
-    financial_support TEXT[],
-    other_financial_support TEXT,
-    leisure_activities TEXT[],
-    other_leisure_activities TEXT,
-    special_talents TEXT,
-    child_residing_with VARCHAR(50),
-    siblings_count INTEGER,
-    birth_order VARCHAR(20),
-    other_birth_order VARCHAR(20),
-    relatives_at_home TEXT[],
-    other_relatives TEXT,
-    total_relatives INTEGER,
-    
-    guardian_name VARCHAR(100),
-    guardian_relation VARCHAR(50),
-    other_guardian_relation VARCHAR(50),
-    guardian_address TEXT,
-    
-    siblings JSONB,
-    
-    preschool_school VARCHAR(100),
-    preschool_awards TEXT,
-    preschool_year VARCHAR(20),
-    
-    grade_school_school VARCHAR(100),
-    grade_school_awards TEXT,
-    grade_school_year VARCHAR(20),
-    
-    high_school_school VARCHAR(100),
-    high_school_awards TEXT,
-    high_school_year VARCHAR(20),
-    
-    organizations JSONB,
-    
-    height VARCHAR(20),
-    weight VARCHAR(20),
-    health_problem VARCHAR(3) CHECK (health_problem IN ('Yes', 'No')),
-    health_problem_details TEXT,
-    general_condition VARCHAR(50),
-    last_doctor_visit DATE,
-    doctor_visit_reason TEXT,
-    
-    test_results JSONB,
-    
-    signature_date DATE,
-    parent_signature_date DATE
-);
-
-//
-CREATE TABLE students (
-    student_id SERIAL PRIMARY KEY,
-    student_type VARCHAR(10) NOT NULL CHECK (student_type IN ('New', 'Transferee', 'Returnee', 'Old')),
-    school_year VARCHAR(20),
-    course VARCHAR(100) NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    
-    last_name VARCHAR(100) NOT NULL,
-    given_name VARCHAR(100) NOT NULL,
-    middle_name VARCHAR(100),
-    nickname VARCHAR(50),
-    gender VARCHAR(10) CHECK (gender IN ('Male', 'Female', 'Other')),
-    nationality VARCHAR(50),
-    age INTEGER,
-    home_address TEXT,
-    city_address TEXT,
-    birth_month VARCHAR(20),
-    birth_day INTEGER,
-    birth_year INTEGER,
-    birth_place VARCHAR(100),
-    contact_number VARCHAR(20),
-    email VARCHAR(100),
-    religion VARCHAR(50),
-    civil_status VARCHAR(20) CHECK (civil_status IN ('Single', 'Married', 'Separated', 'Widowed')),
-    
-    emergency_contact VARCHAR(100),
-    emergency_relation VARCHAR(50),
-    emergency_number VARCHAR(20),
-    
-    student_photo_url TEXT,
-    
-    father_last_name VARCHAR(100),
-    father_first_name VARCHAR(100),
-    father_middle_name VARCHAR(100),
-    father_occupation VARCHAR(100),
-    father_status VARCHAR(20) CHECK (father_status IN ('Employed', 'Unemployed', 'Retired', 'Disabled', 'Deceased')),
-    father_location VARCHAR(10) CHECK (father_location IN ('Overseas', 'Local')),
-    father_employment_type VARCHAR(20) CHECK (father_employment_type IN ('Private', 'Government')),
-    father_education VARCHAR(50),
-    father_specialization VARCHAR(100),
-    
-    mother_last_name VARCHAR(100),
-    mother_first_name VARCHAR(100),
-    mother_middle_name VARCHAR(100),
-    mother_occupation VARCHAR(100),
-    mother_status VARCHAR(20) CHECK (mother_status IN ('Employed', 'Unemployed', 'Retired', 'Disabled', 'Deceased')),
-    mother_location VARCHAR(10) CHECK (mother_location IN ('Overseas', 'Local')),
-    mother_employment_type VARCHAR(20) CHECK (mother_employment_type IN ('Private', 'Government')),
-    mother_education VARCHAR(50),
-    mother_specialization VARCHAR(100),
-    
-    parents_marital_status VARCHAR(50),
-    residence_type VARCHAR(10) CHECK (residence_type IN ('rented', 'owned')),
-    languages_spoken TEXT,
-    family_income VARCHAR(50),
-    financial_support TEXT[],
-    other_financial_support TEXT,
-    leisure_activities TEXT[],
-    other_leisure_activities TEXT,
-    special_talents TEXT,
-    child_residing_with VARCHAR(50),
-    siblings_count INTEGER,
-    birth_order VARCHAR(20),
-    other_birth_order VARCHAR(20),
-    relatives_at_home TEXT[],
-    other_relatives TEXT,
-    total_relatives INTEGER,
-    
-    guardian_name VARCHAR(100),
-    guardian_relation VARCHAR(50),
-    other_guardian_relation VARCHAR(50),
-    guardian_address TEXT,
-    
-    siblings JSONB,
-    
-    preschool_school VARCHAR(100),
-    preschool_awards TEXT,
-    preschool_year VARCHAR(20),
-    
-    grade_school_school VARCHAR(100),
-    grade_school_awards TEXT,
-    grade_school_year VARCHAR(20),
-    
-    high_school_school VARCHAR(100),
-    high_school_awards TEXT,
-    high_school_year VARCHAR(20),
-    
-    organizations JSONB,
-    
-    height VARCHAR(20),
-    weight VARCHAR(20),
-    health_problem VARCHAR(3) CHECK (health_problem IN ('Yes', 'No')),
-    health_problem_details TEXT,
-    general_condition VARCHAR(50),
-    last_doctor_visit DATE,
-    doctor_visit_reason TEXT,
-    
-    test_results JSONB,
-    
-    signature_date DATE,
-    parent_signature_date DATE
-);
-
-
-
-CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(50) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
-    usertype VARCHAR(20) NOT NULL CHECK (usertype IN ('admin', 'student', 'guidance_advocate')),
-    email VARCHAR(100) NOT NULL UNIQUE,
-    first_name VARCHAR(100) NOT NULL,
-    last_name VARCHAR(100) NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
-
-CREATE TABLE basic_education_students (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id),
-    school_year VARCHAR(20),
-    grade_level VARCHAR(20),
-    student_type VARCHAR(20),
-    status VARCHAR(20),
-    archived BOOLEAN DEFAULT false,
-
-    last_name VARCHAR(50),
-    given_name VARCHAR(50),
-    middle_name VARCHAR(50),
-    suffix VARCHAR(10),
-    gender VARCHAR(20),
-    citizenship VARCHAR(50),
-    address TEXT,
-    contact_number VARCHAR(20),
-    birth_date DATE,
-    birth_place VARCHAR(100),
-    religion VARCHAR(50),
-    age INTEGER,
-
-    sacraments JSONB,
-    family_info JSONB,
-    residence_info JSONB,
-    education_background JSONB,
-    organizations JSONB,
-    health_info JSONB,
-    test_results JSONB,
-
-    signature_date DATE,
-    parent_signature_date DATE,
-    student_photo_url TEXT,
-
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TRIGGER update_basic_education_students_timestamp
-    BEFORE UPDATE ON basic_education_students
-    FOR EACH ROW
-    EXECUTE FUNCTION update_timestamp();
-
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
@@ -278,3 +10,183 @@ CREATE TABLE users (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE pds_students (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    education_level VARCHAR(20) CHECK (education_level IN ('Basic Education', 'Senior High', 'Higher Education', '')),
+    school_year VARCHAR(30),
+    semester VARCHAR(20) CHECK (semester IN ('1st Semester', '2nd Semester', '')),
+    grade_level VARCHAR(50),
+    strand VARCHAR(100),
+    course VARCHAR(100),
+    year_level VARCHAR(50),
+    student_type VARCHAR(20) CHECK (student_type IN ('New', 'Transferee', 'Returnee', 'Old', '')),
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
+    middle_name VARCHAR(100), 
+    nickname VARCHAR(50),
+    sex VARCHAR(20) CHECK (sex IN ('Male', 'Female', '')),
+    civil_status VARCHAR(20) CHECK (civil_status IN ('Single', 'Married', 'Widowed', 'Separated', '')),
+    nationality VARCHAR(50),
+    contact_number VARCHAR(20),
+    email VARCHAR(100),
+    address TEXT,
+    city_address TEXT,
+    birth_date DATE,
+    birth_place VARCHAR(100),
+    age INTEGER,
+    religion VARCHAR(50),
+    emergency_contact VARCHAR(100),
+    emergency_relation VARCHAR(50),
+    emergency_number VARCHAR(20),
+    signature_name VARCHAR(100),
+    signature_date DATE,
+    parent_signature_name VARCHAR(100),
+    parent_signature_date DATE,
+    student_photo_url VARCHAR(255),
+    residence_type VARCHAR(50),
+    residence_owner VARCHAR(100),
+    languages_spoken_at_home TEXT,
+    special_talents TEXT,
+    living_with_parents BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_pds_students_education_level ON pds_students(education_level);
+CREATE INDEX idx_pds_students_user_id ON pds_students(user_id);
+
+CREATE TABLE family_info (
+    id SERIAL PRIMARY KEY,
+    student_id INTEGER REFERENCES pds_students(id) ON DELETE CASCADE,
+    parents_marital_status VARCHAR(50),
+    child_residing_with VARCHAR(50),
+    child_residence_other VARCHAR(100),
+    birth_order VARCHAR(20),
+    siblings_count INTEGER,
+    brothers_count INTEGER,
+    sisters_count INTEGER,
+    step_brothers_count INTEGER,
+    step_sisters_count INTEGER,
+    adopted_count INTEGER,
+    family_monthly_income VARCHAR(50) CHECK (family_monthly_income IN (
+        'Below ₱10,000.00', '₱10,001 - ₱13,000', '₱13,001 - ₱15,000',
+        '₱15,001 - ₱18,000', '₱18,001 - ₱21,000', '₱21,001 - ₱24,000',
+        '₱24,001 - ₱27,000', '₱27,001 - ₱30,000', 'Above ₱30,000', ''
+    )),
+    relatives_at_home TEXT,
+    other_relatives TEXT,
+    total_relatives INTEGER,
+    financial_support VARCHAR(30),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_family_info_student_id ON family_info(student_id);
+
+CREATE TABLE sacraments (
+    id SERIAL PRIMARY KEY,
+    student_id INTEGER REFERENCES pds_students(id) ON DELETE CASCADE,
+    sacrament_type VARCHAR(50),
+    received BOOLEAN,
+    date DATE,
+    church VARCHAR(100)
+);
+
+CREATE INDEX idx_sacraments_student_id ON sacraments(student_id);
+
+CREATE TABLE parents (
+    id SERIAL PRIMARY KEY,
+    student_id INTEGER REFERENCES pds_students(id) ON DELETE CASCADE,
+    parent_type VARCHAR(20) CHECK (parent_type IN ('father', 'mother', '')),
+    last_name VARCHAR(100),
+    first_name VARCHAR(100),
+    middle_name VARCHAR(100),
+    occupation VARCHAR(100),
+    location VARCHAR(50),
+    employment_type VARCHAR(50),
+    status VARCHAR(50),
+    highest_educational_attainment VARCHAR(100),
+    specialization VARCHAR(100),
+    post_graduate_studies VARCHAR(10) CHECK (post_graduate_studies IN ('MS/MA', 'PhD', '')) DEFAULT ''
+);
+
+CREATE INDEX idx_parents_student_id ON parents(student_id);
+
+CREATE TABLE leisure_activities (
+    id SERIAL PRIMARY KEY,
+    student_id INTEGER REFERENCES pds_students(id) ON DELETE CASCADE,
+    activities TEXT,
+    other_activity VARCHAR(100)
+);
+
+CREATE INDEX idx_leisure_activities_student_id ON leisure_activities(student_id);
+
+CREATE TABLE if_not_with_parents (
+    id SERIAL PRIMARY KEY,
+    student_id INTEGER REFERENCES pds_students(id) ON DELETE CASCADE,
+    guardian_name VARCHAR(100),
+    relationship VARCHAR(50),
+    address TEXT
+);
+
+CREATE INDEX idx_if_not_with_parents_student_id ON if_not_with_parents(student_id);
+
+CREATE TABLE siblings (
+    id SERIAL PRIMARY KEY,
+    student_id INTEGER REFERENCES pds_students(id) ON DELETE CASCADE,
+    name VARCHAR(100),
+    age INTEGER,
+    school VARCHAR(100),
+    status VARCHAR(50),
+    occupation VARCHAR(100)
+);
+
+CREATE INDEX idx_siblings_student_id ON siblings(student_id);
+
+CREATE TABLE educational_background (
+    id SERIAL PRIMARY KEY,
+    student_id INTEGER REFERENCES pds_students(id) ON DELETE CASCADE,
+    level VARCHAR(20) CHECK (level IN ('Preschool', 'Grade School', 'High School', 'Senior High School', '')),
+    school_attended_or_address VARCHAR(100),
+    awards_or_honors_received TEXT,
+    school_year_attended VARCHAR(20)
+);
+
+CREATE INDEX idx_educational_background_student_id ON educational_background(student_id);
+
+CREATE TABLE organizations (
+    id SERIAL PRIMARY KEY,
+    student_id INTEGER REFERENCES pds_students(id) ON DELETE CASCADE,
+    school_year VARCHAR(20),
+    organization_club VARCHAR(100),
+    designation VARCHAR(100)
+);
+
+CREATE INDEX idx_organizations_student_id ON organizations(student_id);
+
+CREATE TABLE health_info (
+    id SERIAL PRIMARY KEY,
+    student_id INTEGER REFERENCES pds_students(id) ON DELETE CASCADE,
+    height VARCHAR(20),
+    weight VARCHAR(20),
+    physical_condition VARCHAR(50),
+    health_problem VARCHAR(50),
+    health_problem_details TEXT,
+    last_doctor_visit DATE,
+    last_doctor_visit_reason VARCHAR(100),
+    general_condition VARCHAR(50)
+);
+
+CREATE INDEX idx_health_info_student_id ON health_info(student_id);
+
+CREATE TABLE test_results (
+    id SERIAL PRIMARY KEY,
+    student_id INTEGER REFERENCES pds_students(id) ON DELETE CASCADE,
+    test_name VARCHAR(100),
+    date_taken DATE,
+    rating VARCHAR(50)
+);
+
+CREATE INDEX idx_test_results_student_id ON test_results(student_id);

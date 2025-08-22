@@ -6,6 +6,7 @@ import {
   FiChevronRight, FiBook, FiAward, FiHome, FiCalendar, FiClock, FiSettings,
   FiBell, FiSearch, FiBarChart, FiTrendingUp, FiUserCheck, FiPlus, FiEdit, FiTrash2
 } from "react-icons/fi";
+import HigherEdForm from '../components/Higher-ed/higher-ed-form';
 import BasicEdForm from '../components/Basic-ed/BasicEdForm';
 import SeniorHighSchoolForm from '../components/Senior-high/SeniorHighForm';
 
