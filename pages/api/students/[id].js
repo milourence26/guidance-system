@@ -88,6 +88,8 @@ export default async function handler(req, res) {
         break;
 
       case 'PUT':
+          console.log('PUT request received for student ID:', id);
+  console.log('Request body:', req.body);
         // Update student data
         const normalizedBody = normalizeEmptyToNull(req.body);
         const {
@@ -443,6 +445,7 @@ export default async function handler(req, res) {
 
         await client.query('COMMIT');
         
+        console.log('Student PDS updated successfully for ID:', id);
         res.status(200).json({ message: 'Student PDS updated successfully' });
         break;
 

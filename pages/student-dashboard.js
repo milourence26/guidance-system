@@ -286,7 +286,6 @@ function Forms({ formStatus, setFormStatus, showModal, setShowModal, onAddStuden
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch student data when component mounts
   useEffect(() => {
     const fetchStudentData = async () => {
       try {
@@ -299,20 +298,14 @@ function Forms({ formStatus, setFormStatus, showModal, setShowModal, onAddStuden
           return;
         }
 
-        const response = await fetch(`/api/students?userId=${userId}`);
+        const response = await fetch(`/api/students/view?userId=${userId}`);
         
         if (response.ok) {
           const data = await response.json();
+          console.log('Fetched studentData:', data); // Log studentData
           setStudentData(data);
-          
-          // Update form status based on whether data exists
-          if (data && data.id) {
-            setFormStatus('Submitted');
-          } else {
-            setFormStatus('Pending');
-          }
+          setFormStatus(data && data.id ? 'Submitted' : 'Pending');
         } else if (response.status === 404) {
-          // No student data found, which is normal for new users
           setFormStatus('Pending');
         } else {
           setError('Failed to fetch student data');
@@ -330,15 +323,17 @@ function Forms({ formStatus, setFormStatus, showModal, setShowModal, onAddStuden
 
   const handleViewForm = async () => {
     if (!studentData) {
-      // If no data in state, try to fetch it again
       setIsLoading(true);
       try {
         const userId = localStorage.getItem('userId');
-        const response = await fetch(`/api/students?userId=${userId}`);
+        const response = await fetch(`/api/students/view?userId=${userId}`);
         if (response.ok) {
           const data = await response.json();
+          console.log('View studentData:', data); // Log studentData
           setStudentData(data);
           setShowViewModal(true);
+        } else {
+          setError('Failed to fetch student data');
         }
       } catch (error) {
         console.error('Error fetching student data:', error);
@@ -347,21 +342,24 @@ function Forms({ formStatus, setFormStatus, showModal, setShowModal, onAddStuden
         setIsLoading(false);
       }
     } else {
+      console.log('Using cached studentData:', studentData); // Log cached data
       setShowViewModal(true);
     }
   };
 
   const handleUpdateForm = async () => {
     if (!studentData) {
-      // If no data in state, try to fetch it again
       setIsLoading(true);
       try {
         const userId = localStorage.getItem('userId');
-        const response = await fetch(`/api/students?userId=${userId}`);
+        const response = await fetch(`/api/students/view?userId=${userId}`);
         if (response.ok) {
           const data = await response.json();
+          console.log('Update studentData:', data); // Log studentData
           setStudentData(data);
           setShowUpdateModal(true);
+        } else {
+          setError('Failed to fetch student data');
         }
       } catch (error) {
         console.error('Error fetching student data:', error);
@@ -370,40 +368,46 @@ function Forms({ formStatus, setFormStatus, showModal, setShowModal, onAddStuden
         setIsLoading(false);
       }
     } else {
+      console.log('Using cached studentData:', studentData); // Log cached data
       setShowUpdateModal(true);
     }
   };
 
-const handleUpdateStudent = async (updatedStudent) => {
-  setFormStatus('Submitted');
-  
-  // Refresh the student data after successful update
-  try {
-    const userId = localStorage.getItem('userId');
-    const response = await fetch(`/api/students?userId=${userId}`);
-    if (response.ok) {
-      const data = await response.json();
-      setStudentData(data);
+  const handleUpdateStudent = async (updatedStudent) => {
+    setFormStatus('Submitted');
+    try {
+      const userId = localStorage.getItem('userId');
+      const response = await fetch(`/api/students/view?userId=${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Updated studentData:', data); // Log studentData
+        setStudentData(data);
+      } else {
+        setError('Failed to fetch updated student data');
+      }
+    } catch (error) {
+      console.error('Error fetching student data after update:', error);
+      setError('Error fetching student data. Please try again.');
     }
-  } catch (error) {
-    console.error('Error fetching student data after update:', error);
-  }
-};
+  };
 
   const handleAddStudentSuccess = (newStudent) => {
     onAddStudent(newStudent);
     setFormStatus('Submitted');
-    // Refresh the student data after successful submission
     const fetchData = async () => {
       try {
         const userId = localStorage.getItem('userId');
-        const response = await fetch(`/api/students?userId=${userId}`);
+        const response = await fetch(`/api/students/view?userId=${userId}`);
         if (response.ok) {
           const data = await response.json();
+          console.log('Post-add studentData:', data); // Log studentData
           setStudentData(data);
+        } else {
+          setError('Failed to fetch student data after submission');
         }
       } catch (error) {
-        console.error('Error fetching student data after update:', error);
+        console.error('Error fetching student data after submission:', error);
+        setError('Error fetching student data. Please try again.');
       }
     };
     fetchData();
@@ -496,7 +500,6 @@ const handleUpdateStudent = async (updatedStudent) => {
         </div>
       </div>
       
-      {/* Additional helpful information */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h4 className="text-blue-800 font-medium mb-2 flex items-center">
           <FiAlertCircle className="mr-2" />
@@ -509,7 +512,6 @@ const handleUpdateStudent = async (updatedStudent) => {
         </ul>
       </div>
       
-      {/* View Modal */}
       <StudentPDSViewModal 
         showModal={showViewModal}
         setShowModal={setShowViewModal}
@@ -517,7 +519,6 @@ const handleUpdateStudent = async (updatedStudent) => {
         educationLevel={studentData?.education_level}
       />
       
-      {/* Update Modal */}
       <StudentPDSUpdateModal 
         showModal={showUpdateModal}
         setShowModal={setShowUpdateModal}
@@ -525,7 +526,6 @@ const handleUpdateStudent = async (updatedStudent) => {
         onUpdateStudent={handleUpdateStudent}
       />
       
-      {/* Create Modal */}
       <StudentPDSModal 
         showModal={showModal}
         setShowModal={setShowModal}

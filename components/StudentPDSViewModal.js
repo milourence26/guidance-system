@@ -1,4 +1,3 @@
-// components/StudentPDSViewModal.js
 import { FiX } from 'react-icons/fi';
 
 const StudentPDSViewModal = ({ showModal, setShowModal, studentData, educationLevel }) => {
@@ -22,6 +21,12 @@ const StudentPDSViewModal = ({ showModal, setShowModal, studentData, educationLe
     return `${parent.first_name || ''} ${parent.last_name || ''}`.trim();
   };
 
+  // Helper function to display sacrament status
+  const displaySacrament = (sacrament) => {
+    if (!sacrament || (sacrament.received !== true && sacrament.received !== 'true')) return 'Not Received';
+    return 'Received';
+  };
+
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[95vh] overflow-hidden border border-gray-200">
@@ -34,14 +39,11 @@ const StudentPDSViewModal = ({ showModal, setShowModal, studentData, educationLe
           >
             <FiX className="w-5 h-5" />
           </button>
-
           <div className="text-center space-y-2 pt-2">
             <h1 className="text-2xl font-bold tracking-tight drop-shadow-sm">
               St. Rita's College of Balingasag
             </h1>
             <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4 text-sm">
-              <p className="font-medium opacity-95">Senior High School Department</p>
-              <div className="hidden sm:block h-4 w-px bg-white/40 self-center"></div>
               <p className="font-medium opacity-95">GUIDANCE CENTER</p>
             </div>
           </div>
@@ -50,7 +52,7 @@ const StudentPDSViewModal = ({ showModal, setShowModal, studentData, educationLe
         {/* Form Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-8">
           <h1 className="text-2xl font-bold uppercase tracking-tight text-gray-800 text-center mb-6">
-            STUDENT PERSONAL DATA SHEET
+            PERSONAL DATA SHEET
           </h1>
 
           {/* Education Level */}
@@ -68,38 +70,33 @@ const StudentPDSViewModal = ({ showModal, setShowModal, studentData, educationLe
               <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">2</span>
               Personal Information
             </h2>
-            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">School Year</label>
                 <p className="text-gray-700">{studentData.school_year || 'N/A'}</p>
               </div>
-              
               {educationLevel === 'Higher Education' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Semester</label>
                   <p className="text-gray-700">{studentData.semester || 'N/A'}</p>
                 </div>
               )}
-              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   {educationLevel === 'Higher Education' ? 'Course & Year Level' : 'Grade Level & Strand'}
                 </label>
                 <p className="text-gray-700">
-                  {educationLevel === 'Higher Education' 
+                  {educationLevel === 'Higher Education'
                     ? `${studentData.course || 'N/A'} - ${studentData.year_level || 'N/A'}`
                     : `${studentData.grade_level || 'N/A'} ${studentData.strand ? `- ${studentData.strand}` : ''}`
                   }
                 </p>
               </div>
-              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Student Type</label>
                 <p className="text-gray-700">{studentData.student_type || 'N/A'}</p>
               </div>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
@@ -114,7 +111,6 @@ const StudentPDSViewModal = ({ showModal, setShowModal, studentData, educationLe
                 <p className="text-gray-700">{studentData.middle_name || 'N/A'}</p>
               </div>
             </div>
-
             {educationLevel === 'Higher Education' && (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -127,14 +123,12 @@ const StudentPDSViewModal = ({ showModal, setShowModal, studentData, educationLe
                     <p className="text-gray-700">{studentData.civil_status || 'N/A'}</p>
                   </div>
                 </div>
-                
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                   <p className="text-gray-700">{studentData.email || 'N/A'}</p>
                 </div>
               </>
             )}
-
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Sex</label>
@@ -149,19 +143,16 @@ const StudentPDSViewModal = ({ showModal, setShowModal, studentData, educationLe
                 <p className="text-gray-700">{studentData.contact_number || 'N/A'}</p>
               </div>
             </div>
-
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
               <p className="text-gray-700">{studentData.address || 'N/A'}</p>
             </div>
-
             {educationLevel === 'Higher Education' && (
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-1">City Address (if boarding)</label>
                 <p className="text-gray-700">{studentData.city_address || 'N/A'}</p>
               </div>
             )}
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
@@ -172,7 +163,43 @@ const StudentPDSViewModal = ({ showModal, setShowModal, studentData, educationLe
                 <p className="text-gray-700">{studentData.birth_place || 'N/A'}</p>
               </div>
             </div>
-
+            {(educationLevel === 'Basic Education' || educationLevel === 'Senior High') && (
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Sacraments Received</label>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full border border-gray-200 rounded-lg">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Sacrament</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Status</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Date</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Church</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white">
+                      <tr className="hover:bg-gray-50">
+                        <td className="px-4 py-2 text-sm font-medium text-gray-700">Baptism</td>
+                        <td className="px-4 py-2 text-sm text-gray-700">{displaySacrament(studentData.baptism)}</td>
+                        <td className="px-4 py-2 text-sm text-gray-700">{studentData.baptism?.date ? displayDate(studentData.baptism.date) : 'N/A'}</td>
+                        <td className="px-4 py-2 text-sm text-gray-700">{studentData.baptism?.church || 'N/A'}</td>
+                      </tr>
+                      <tr className="hover:bg-gray-50">
+                        <td className="px-4 py-2 text-sm font-medium text-gray-700">First Communion</td>
+                        <td className="px-4 py-2 text-sm text-gray-700">{displaySacrament(studentData.firstCommunion)}</td>
+                        <td className="px-4 py-2 text-sm text-gray-700">{studentData.firstCommunion?.date ? displayDate(studentData.firstCommunion.date) : 'N/A'}</td>
+                        <td className="px-4 py-2 text-sm text-gray-700">{studentData.firstCommunion?.church || 'N/A'}</td>
+                      </tr>
+                      <tr className="hover:bg-gray-50">
+                        <td className="px-4 py-2 text-sm font-medium text-gray-700">Confirmation</td>
+                        <td className="px-4 py-2 text-sm text-gray-700">{displaySacrament(studentData.confirmation)}</td>
+                        <td className="px-4 py-2 text-sm text-gray-700">{studentData.confirmation?.date ? displayDate(studentData.confirmation.date) : 'N/A'}</td>
+                        <td className="px-4 py-2 text-sm text-gray-700">{studentData.confirmation?.church || 'N/A'}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
@@ -183,8 +210,6 @@ const StudentPDSViewModal = ({ showModal, setShowModal, studentData, educationLe
                 <p className="text-gray-700">{studentData.religion || 'N/A'}</p>
               </div>
             </div>
-
-            {/* Emergency Contact */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Emergency Contact Person</label>
@@ -207,173 +232,143 @@ const StudentPDSViewModal = ({ showModal, setShowModal, studentData, educationLe
               <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">3</span>
               Family Information
             </h2>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              {/* Father's Information */}
               <div className="bg-blue-50 p-5 rounded-xl border border-blue-100 shadow-sm">
                 <h4 className="font-medium text-blue-800 mb-4 text-lg">Father's Information</h4>
-                {studentData.father && studentData.father.length > 0 ? (
-                  studentData.father.map((father, index) => (
-                    <div key={index} className="space-y-4">
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">Full Name</label>
-                        <p className="text-gray-700">{displayParent(father)}</p>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">Occupation</label>
-                        <p className="text-gray-700">{father.occupation || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">Location</label>
-                        <p className="text-gray-700">{father.location || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">Employment Type</label>
-                        <p className="text-gray-700">{father.employment_type || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">Status</label>
-                        <p className="text-gray-700">{father.status || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">Highest Educational Attainment</label>
-                        <p className="text-gray-700">{father.highest_educational_attainment || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">Specialization</label>
-                        <p className="text-gray-700">{father.specialization || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">Post Graduate Studies</label>
-                        <p className="text-gray-700">{father.post_graduate_studies || 'N/A'}</p>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-700">No father information available</p>
-                )}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Full Name</label>
+                    <p className="text-gray-700">{displayParent(studentData.father)}</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Occupation</label>
+                    <p className="text-gray-700">{studentData.father?.occupation || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Location</label>
+                    <p className="text-gray-700">{studentData.father?.location || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Employment Type</label>
+                    <p className="text-gray-700">{studentData.father?.employment_type || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Status</label>
+                    <p className="text-gray-700">{studentData.father?.status || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Highest Educational Attainment</label>
+                    <p className="text-gray-700">{studentData.father?.highest_educational_attainment || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Specialization</label>
+                    <p className="text-gray-700">{studentData.father?.specialization || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Post Graduate Studies</label>
+                    <p className="text-gray-700">{studentData.father?.post_graduate_studies || 'N/A'}</p>
+                  </div>
+                </div>
               </div>
-
-              {/* Mother's Information */}
               <div className="bg-pink-50 p-5 rounded-xl border border-pink-100 shadow-sm">
                 <h4 className="font-medium text-pink-800 mb-4 text-lg">Mother's Information</h4>
-                {studentData.mother && studentData.mother.length > 0 ? (
-                  studentData.mother.map((mother, index) => (
-                    <div key={index} className="space-y-4">
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">Full Name</label>
-                        <p className="text-gray-700">{displayParent(mother)}</p>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">Occupation</label>
-                        <p className="text-gray-700">{mother.occupation || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">Location</label>
-                        <p className="text-gray-700">{mother.location || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">Employment Type</label>
-                        <p className="text-gray-700">{mother.employment_type || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">Status</label>
-                        <p className="text-gray-700">{mother.status || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">Highest Educational Attainment</label>
-                        <p className="text-gray-700">{mother.highest_educational_attainment || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">Specialization</label>
-                        <p className="text-gray-700">{mother.specialization || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">Post Graduate Studies</label>
-                        <p className="text-gray-700">{mother.post_graduate_studies || 'N/A'}</p>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-700">No mother information available</p>
-                )}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Full Name</label>
+                    <p className="text-gray-700">{displayParent(studentData.mother)}</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Occupation</label>
+                    <p className="text-gray-700">{studentData.mother?.occupation || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Location</label>
+                    <p className="text-gray-700">{studentData.mother?.location || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Employment Type</label>
+                    <p className="text-gray-700">{studentData.mother?.employment_type || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Status</label>
+                    <p className="text-gray-700">{studentData.mother?.status || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Highest Educational Attainment</label>
+                    <p className="text-gray-700">{studentData.mother?.highest_educational_attainment || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Specialization</label>
+                    <p className="text-gray-700">{studentData.mother?.specialization || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Post Graduate Studies</label>
+                    <p className="text-gray-700">{studentData.mother?.post_graduate_studies || 'N/A'}</p>
+                  </div>
+                </div>
               </div>
             </div>
-
-            {studentData.family_info && studentData.family_info.length > 0 && (
-              <>
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Parents' Marital Status</label>
-                  <p className="text-gray-700">{studentData.family_info[0].parents_marital_status || 'N/A'}</p>
-                </div>
-
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Birth Order</label>
-                  <p className="text-gray-700">{studentData.family_info[0].birth_order || 'N/A'}</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Number of Siblings</label>
-                    <p className="text-gray-700">{studentData.family_info[0].siblings_count || 'N/A'}</p>
-                  </div>
-
-                  {studentData.family_info[0].siblings_count > 0 && (
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Parents' Marital Status</label>
+              <p className="text-gray-700">{studentData.family_info?.[0]?.parents_marital_status || 'N/A'}</p>
+            </div>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Birth Order</label>
+              <p className="text-gray-700">{studentData.family_info?.[0]?.birth_order || 'N/A'}</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Number of Siblings</label>
+                <p className="text-gray-700">{studentData.family_info?.[0]?.siblings_count || 'N/A'}</p>
+              </div>
+              {studentData.family_info?.[0]?.siblings_count > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Sibling Breakdown</label>
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Sibling Breakdown</label>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs text-gray-600 mb-1">Brothers</label>
-                          <p className="text-gray-700">{studentData.family_info[0].brothers_count || '0'}</p>
-                        </div>
-                        <div>
-                          <label className="block text-xs text-gray-600 mb-1">Sisters</label>
-                          <p className="text-gray-700">{studentData.family_info[0].sisters_count || '0'}</p>
-                        </div>
-                        <div>
-                          <label className="block text-xs text-gray-600 mb-1">Step Brothers</label>
-                          <p className="text-gray-700">{studentData.family_info[0].step_brothers_count || '0'}</p>
-                        </div>
-                        <div>
-                          <label className="block text-xs text-gray-600 mb-1">Step Sisters</label>
-                          <p className="text-gray-700">{studentData.family_info[0].step_sisters_count || '0'}</p>
-                        </div>
-                        <div>
-                          <label className="block text-xs text-gray-600 mb-1">Adopted</label>
-                          <p className="text-gray-700">{studentData.family_info[0].adopted_count || '0'}</p>
-                        </div>
-                      </div>
+                      <label className="block text-xs text-gray-600 mb-1">Brothers</label>
+                      <p className="text-gray-700">{studentData.family_info?.[0]?.brothers_count || '0'}</p>
                     </div>
-                  )}
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Sisters</label>
+                      <p className="text-gray-700">{studentData.family_info?.[0]?.sisters_count || '0'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Step Brothers</label>
+                      <p className="text-gray-700">{studentData.family_info?.[0]?.step_brothers_count || '0'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Step Sisters</label>
+                      <p className="text-gray-700">{studentData.family_info?.[0]?.step_sisters_count || '0'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Adopted</label>
+                      <p className="text-gray-700">{studentData.family_info?.[0]?.adopted_count || '0'}</p>
+                    </div>
+                  </div>
                 </div>
-
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Other Relatives at Home</label>
-                  <p className="text-gray-700">{displayArray(studentData.family_info[0].relatives_at_home)}</p>
-                  {studentData.family_info[0].other_relatives && (
-                    <p className="text-gray-700 mt-1">Other: {studentData.family_info[0].other_relatives}</p>
-                  )}
-                </div>
-
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Total Relatives</label>
-                  <p className="text-gray-700">{studentData.family_info[0].total_relatives || 'N/A'}</p>
-                </div>
-
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Family Monthly Income</label>
-                  <p className="text-gray-700">{studentData.family_info[0].family_monthly_income || 'N/A'}</p>
-                </div>
-
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Source of financial support</label>
-                  <p className="text-gray-700">{studentData.family_info[0].financial_support || 'N/A'}</p>
-                </div>
-              </>
-            )}
-
-            {/* Siblings */}
-            {studentData.siblings && studentData.siblings.length > 0 && (
+              )}
+            </div>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Other Relatives at Home</label>
+              <p className="text-gray-700">{displayArray(studentData.family_info?.[0]?.relatives_at_home)}</p>
+              {studentData.family_info?.[0]?.other_relatives && (
+                <p className="text-gray-700 mt-1">Other: {studentData.family_info[0].other_relatives}</p>
+              )}
+            </div>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Total Relatives</label>
+              <p className="text-gray-700">{studentData.family_info?.[0]?.total_relatives || 'N/A'}</p>
+            </div>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Family Monthly Income</label>
+              <p className="text-gray-700">{studentData.family_info?.[0]?.family_monthly_income || 'N/A'}</p>
+            </div>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Source of financial support</label>
+              <p className="text-gray-700">{studentData.family_info?.[0]?.financial_support || 'N/A'}</p>
+            </div>
+            {studentData.siblings?.length > 0 && (
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Siblings (from Oldest to Youngest)</label>
                 <div className="overflow-x-auto">
@@ -402,107 +397,106 @@ const StudentPDSViewModal = ({ showModal, setShowModal, studentData, educationLe
                 </div>
               </div>
             )}
-
-            {/* Residence Information */}
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Residence Information</h3>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Is your residence:</label>
                   <p className="text-gray-700">{studentData.residence_type || 'N/A'}</p>
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Languages spoken at home:</label>
                   <p className="text-gray-700">{studentData.languages_spoken_at_home || 'N/A'}</p>
                 </div>
               </div>
             </div>
-
-            {/* Leisure Activities */}
-            {studentData.leisure_activities && studentData.leisure_activities.length > 0 && (
-              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Leisure Activities</h3>
-                <p className="text-gray-700">{displayArray(studentData.leisure_activities[0].activities)}</p>
-                {studentData.leisure_activities[0].other_activity && (
-                  <p className="text-gray-700 mt-2">Other: {studentData.leisure_activities[0].other_activity}</p>
-                )}
-              </div>
-            )}
-
-            {/* Special Talents */}
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Leisure Activities</h3>
+              <p className="text-gray-700">{displayArray(studentData.leisure_activities?.[0]?.activities)}</p>
+              {studentData.leisure_activities?.[0]?.other_activity && (
+                <p className="text-gray-700 mt-2">Other: {studentData.leisure_activities[0].other_activity}</p>
+              )}
+            </div>
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Special Talents</h3>
               <p className="text-gray-700">{studentData.special_talents || 'N/A'}</p>
             </div>
-
-            {/* Guardian Information */}
-            {studentData.guardian && studentData.guardian.length > 0 && (
+            {studentData.guardian?.length > 0 && (
               <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Guardian Information</h3>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Guardian's Name</label>
-                    <p className="text-gray-700">{studentData.guardian[0].guardian_name || 'N/A'}</p>
+                    <p className="text-gray-700">{studentData.guardian[0]?.guardian_name || 'N/A'}</p>
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Relationship</label>
-                    <p className="text-gray-700">{studentData.guardian[0].relationship || 'N/A'}</p>
+                    <p className="text-gray-700">{studentData.guardian[0]?.relationship || 'N/A'}</p>
                   </div>
                 </div>
-
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Guardian's Address</label>
-                  <p className="text-gray-700">{studentData.guardian[0].address || 'N/A'}</p>
+                  <p className="text-gray-700">{studentData.guardian[0]?.address || 'N/A'}</p>
                 </div>
               </div>
             )}
           </div>
 
           {/* Educational Background */}
-          {studentData.educational_background && studentData.educational_background.length > 0 && (
-            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">4</span>
-                Educational Background
-              </h2>
-
-              <div className="overflow-x-auto">
-                <table className="min-w-full border border-gray-200 rounded-lg">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Level</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">School Attended/Address</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Awards/Honors Received</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">School Year Attended</th>
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">4</span>
+              Educational Background
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="min-w-full border border-gray-200 rounded-lg">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Level</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">School Attended/Address</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Awards/Honors Received</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">School Year Attended</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white">
+                  <tr className="hover:bg-gray-50">
+                    <td className="px-4 py-2 text-sm font-medium text-gray-700">Preschool</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{studentData.preschool?.school_attended_or_address || 'N/A'}</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{studentData.preschool?.awards_or_honors_received || 'N/A'}</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{studentData.preschool?.school_year_attended || 'N/A'}</td>
+                  </tr>
+                  <tr className="hover:bg-gray-50">
+                    <td className="px-4 py-2 text-sm font-medium text-gray-700">Elementary</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{studentData.elementary?.school_attended_or_address || 'N/A'}</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{studentData.elementary?.awards_or_honors_received || 'N/A'}</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{studentData.elementary?.school_year_attended || 'N/A'}</td>
+                  </tr>
+                  <tr className="hover:bg-gray-50">
+                    <td className="px-4 py-2 text-sm font-medium text-gray-700">High School</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{studentData.highSchool?.school_attended_or_address || 'N/A'}</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{studentData.highSchool?.awards_or_honors_received || 'N/A'}</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{studentData.highSchool?.school_year_attended || 'N/A'}</td>
+                  </tr>
+                  {educationLevel !== 'Basic Education' && (
+                    <tr className="hover:bg-gray-50">
+                      <td className="px-4 py-2 text-sm font-medium text-gray-700">Senior High School</td>
+                      <td className="px-4 py-2 text-sm text-gray-700">{studentData.seniorHigh?.school_attended_or_address || 'N/A'}</td>
+                      <td className="px-4 py-2 text-sm text-gray-700">{studentData.seniorHigh?.awards_or_honors_received || 'N/A'}</td>
+                      <td className="px-4 py-2 text-sm text-gray-700">{studentData.seniorHigh?.school_year_attended || 'N/A'}</td>
                     </tr>
-                  </thead>
-                  <tbody className="bg-white">
-                    {studentData.educational_background.map((edu, index) => (
-                      <tr key={index} className="hover:bg-gray-50">
-                        <td className="px-4 py-2 text-sm font-medium text-gray-700">{edu.level || 'N/A'}</td>
-                        <td className="px-4 py-2 text-sm text-gray-700">{edu.school_attended_or_address || 'N/A'}</td>
-                        <td className="px-4 py-2 text-sm text-gray-700">{edu.awards_or_honors_received || 'N/A'}</td>
-                        <td className="px-4 py-2 text-sm text-gray-700">{edu.school_year_attended || 'N/A'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  )}
+                </tbody>
+              </table>
             </div>
-          )}
+          </div>
 
           {/* Organizational Affiliations */}
-          {studentData.organizations && studentData.organizations.length > 0 && (
+          {studentData.organizations?.length > 0 && (
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
               <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                 <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">5</span>
                 Organizational Affiliations
               </h2>
-
               <div className="overflow-x-auto">
                 <table className="min-w-full border border-gray-200 rounded-lg">
                   <thead className="bg-gray-100">
@@ -527,58 +521,57 @@ const StudentPDSViewModal = ({ showModal, setShowModal, studentData, educationLe
           )}
 
           {/* Health Information */}
-          {studentData.health_info && studentData.health_info.length > 0 && (
+          {studentData.health_info?.length > 0 && (
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
               <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                 <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">6</span>
                 Health Information
               </h2>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
-                  <p className="text-gray-700">{studentData.health_info[0].weight || 'N/A'}</p>
+                  <p className="text-gray-700">{studentData.health_info[0]?.weight || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Height (cm)</label>
+                  <p className="text-gray-700">{studentData.health_info[0]?.height || 'N/A'}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Physical Condition</label>
-                  <p className="text-gray-700">{studentData.health_info[0].physical_condition || 'N/A'}</p>
+                  <p className="text-gray-700">{studentData.health_info[0]?.physical_condition || 'N/A'}</p>
                 </div>
               </div>
-
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Any physical handicap or health problem</label>
-                <p className="text-gray-700">{studentData.health_info[0].health_problem || 'N/A'}</p>
-                {studentData.health_info[0].health_problem_details && (
+                <p className="text-gray-700">{studentData.health_info[0]?.health_problem || 'N/A'}</p>
+                {studentData.health_info[0]?.health_problem_details && (
                   <p className="text-gray-700 mt-2">Details: {studentData.health_info[0].health_problem_details}</p>
                 )}
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">When was your last visit to the doctor?</label>
-                  <p className="text-gray-700">{displayDate(studentData.health_info[0].last_doctor_visit)}</p>
+                  <p className="text-gray-700">{displayDate(studentData.health_info[0]?.last_doctor_visit)}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
-                  <p className="text-gray-700">{studentData.health_info[0].last_doctor_visit_reason || 'N/A'}</p>
+                  <p className="text-gray-700">{studentData.health_info[0]?.last_doctor_visit_reason || 'N/A'}</p>
                 </div>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">General Condition</label>
-                <p className="text-gray-700">{studentData.health_info[0].general_condition || 'N/A'}</p>
+                <p className="text-gray-700">{studentData.health_info[0]?.general_condition || 'N/A'}</p>
               </div>
             </div>
           )}
 
           {/* Test Results */}
-          {studentData.test_results && studentData.test_results.length > 0 && (
+          {studentData.test_results?.length > 0 && (
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
               <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                 <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">7</span>
                 Test Results
               </h2>
-
               <div className="overflow-x-auto">
                 <table className="min-w-full border border-gray-200 rounded-lg">
                   <thead className="bg-gray-100">
@@ -608,11 +601,8 @@ const StudentPDSViewModal = ({ showModal, setShowModal, studentData, educationLe
               <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">8</span>
               Privacy Notice
             </h2>
-
             <div className="text-sm text-gray-700 space-y-4">
-              <p>
-                Dear Student/Parent,
-              </p>
+              <p>Dear Student/Parent,</p>
               <p>
                 St. Rita's College of Balingasag - Guidance Center shall protect the data you provided in compliance with the Data Privacy Act of 2012 and its implementation rules and regulations. SRCB Guidance Center will not collect, disclose or process personal data, including data that may classified as personal information and/or sensitive personal information unless you voluntarily choose to provide us with it and give your consent thereto, or unless such disclosure is required by applicable laws and regulations.
               </p>

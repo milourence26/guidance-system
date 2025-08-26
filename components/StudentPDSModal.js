@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FiX, FiPlus, FiUpload, FiUser, FiTrash2, FiSave } from 'react-icons/fi';
 
 const initialStudentState = {
@@ -113,7 +113,7 @@ const PARENTS_MARITAL_STATUS = [
   'Unmarried'
 ];
 
-const StudentPDSModal = ({ showModal, setShowModal, onAddStudent }) => {
+const StudentPDSModal = ({ showModal, setShowModal, onAddStudent, initialData, isUpdate = false }) => {
   const [newStudent, setNewStudent] = useState({
     ...initialStudentState,
     firstName: localStorage.getItem('firstName') || '',
@@ -121,9 +121,33 @@ const StudentPDSModal = ({ showModal, setShowModal, onAddStudent }) => {
   });
   const [educationLevel, setEducationLevel] = useState('');
   const [errors, setErrors] = useState({});
+  const [studentId, setStudentId] = useState(null); // Add this line
+
+  useEffect(() => {
+    if (isUpdate && initialData) {
+      console.log('Populating form with initial data:', initialData);
+      setNewStudent(initialData);
+      setEducationLevel(initialData.educationLevel || '');
+      setStudentId(initialData.id); // Set the student ID for updates
+    }
+  }, [isUpdate, initialData]);
+
+
+  // Function to clear specific errors when fields are updated
+  const clearError = (fieldName) => {
+    if (errors[fieldName]) {
+      const newErrors = { ...errors };
+      delete newErrors[fieldName];
+      setErrors(newErrors);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+
+    // Clear error for this field when user starts typing
+    clearError(name);
+
     if (name.includes('.')) {
       const [parent, child] = name.split('.');
       setNewStudent((prev) => ({
@@ -139,6 +163,9 @@ const StudentPDSModal = ({ showModal, setShowModal, onAddStudent }) => {
   };
 
   const handleParentChange = (parent, field, value) => {
+    // Clear error for this field
+    clearError(`${parent}.${field}`);
+
     setNewStudent(prev => ({
       ...prev,
       [parent]: {
@@ -149,17 +176,20 @@ const StudentPDSModal = ({ showModal, setShowModal, onAddStudent }) => {
   };
 
   const handleSacramentChange = (sacrament, field, value) => {
-  setNewStudent(prev => ({
-    ...prev,
-    [sacrament]: {
-      ...prev[sacrament],
-      [field]: value
-    }
-  }));
-};
+    clearError(`${sacrament}.${field}`);
 
+    setNewStudent(prev => ({
+      ...prev,
+      [sacrament]: {
+        ...prev[sacrament],
+        [field]: value
+      }
+    }));
+  };
 
   const handleEducationChange = (level, field, value) => {
+    clearError(`${level}.${field}`);
+
     setNewStudent(prev => ({
       ...prev,
       [level]: {
@@ -170,6 +200,8 @@ const StudentPDSModal = ({ showModal, setShowModal, onAddStudent }) => {
   };
 
   const handleSiblingChange = (index, field, value) => {
+    clearError(`siblings.${index}.${field}`);
+
     const updatedSiblings = [...newStudent.siblings];
     updatedSiblings[index] = { ...updatedSiblings[index], [field]: value };
     setNewStudent((prev) => ({ ...prev, siblings: updatedSiblings }));
@@ -190,6 +222,8 @@ const StudentPDSModal = ({ showModal, setShowModal, onAddStudent }) => {
   };
 
   const handleOrganizationChange = (index, field, value) => {
+    clearError(`organizations.${index}.${field}`);
+
     const updatedOrganizations = [...newStudent.organizations];
     updatedOrganizations[index] = { ...updatedOrganizations[index], [field]: value };
     setNewStudent((prev) => ({ ...prev, organizations: updatedOrganizations }));
@@ -210,6 +244,8 @@ const StudentPDSModal = ({ showModal, setShowModal, onAddStudent }) => {
   };
 
   const handleTestResultChange = (index, field, value) => {
+    clearError(`testResults.${index}.${field}`);
+
     const updatedTestResults = [...newStudent.testResults];
     updatedTestResults[index] = { ...updatedTestResults[index], [field]: value };
     setNewStudent((prev) => ({ ...prev, testResults: updatedTestResults }));
@@ -230,6 +266,8 @@ const StudentPDSModal = ({ showModal, setShowModal, onAddStudent }) => {
   };
 
   const handleCheckboxChange = (field, value) => {
+    clearError(field);
+
     const current = newStudent[field] || [];
     const updated = current.includes(value)
       ? current.filter(item => item !== value)
@@ -237,37 +275,67 @@ const StudentPDSModal = ({ showModal, setShowModal, onAddStudent }) => {
     setNewStudent({ ...newStudent, [field]: updated });
   };
 
-const validateForm = () => {
-  const newErrors = {};
-  setErrors({});
-  // Basic required fields for all education levels
-  if (!educationLevel) newErrors.educationLevel = 'Education level is required';
-  if (!newStudent.schoolYear) newErrors.schoolYear = 'School year is required';
-  if (!newStudent.firstName) newErrors.firstName = 'First name is required';
-  if (!newStudent.lastName) newErrors.lastName = 'Last name is required';
-  if (!newStudent.studentType) newErrors.studentType = 'Student type is required';
+  const validateForm = () => {
+    const newErrors = {};
 
-  // Education level specific validations
-  if (educationLevel === 'Higher Education') {
-    if (!newStudent.semester) newErrors.semester = 'Semester is required';
-    if (!newStudent.course) newErrors.course = 'Course is required';
-    if (!newStudent.yearLevel) newErrors.yearLevel = 'Year level is required';
-    if (!newStudent.civil_status) newErrors.civil_status = 'Civil status is required';
-    if (!newStudent.email) newErrors.email = 'Email is required';
-  } else if (educationLevel === 'Senior High') {
-    if (!newStudent.gradeLevel) newErrors.gradeLevel = 'Grade level is required';
-    if (!newStudent.strand) newErrors.strand = 'Strand is required';
-  } else if (educationLevel === 'Basic Education') {
-    if (!newStudent.gradeLevel) newErrors.gradeLevel = 'Grade level is required';
-  }
+    // Clear previous errors
+    setErrors({});
 
-  setErrors(newErrors);
-  return Object.keys(newErrors).length === 0;
-};
+    // Basic required fields for all education levels
+    if (!educationLevel) newErrors.educationLevel = 'Education level is required';
+    if (!newStudent.schoolYear) newErrors.schoolYear = 'School year is required';
+    if (!newStudent.firstName) newErrors.firstName = 'First name is required';
+    if (!newStudent.lastName) newErrors.lastName = 'Last name is required';
+    if (!newStudent.studentType) newErrors.studentType = 'Student type is required';
+    if (!newStudent.address) newErrors.address = 'Address is required';
+    if (!newStudent.birth_date) newErrors.birth_date = 'Date of birth is required';
+    if (!newStudent.sex) newErrors.sex = 'Sex is required';
+    if (!newStudent.signature_name) newErrors.signature_name = 'Signature name is required';
+    if (!newStudent.signature_date) newErrors.signature_date = 'Signature date is required';
+    if (!newStudent.parent_signature_name) newErrors.parent_signature_name = 'Parent signature name is required';
+    if (!newStudent.parent_signature_date) newErrors.parent_signature_date = 'Parent signature date is required';
+
+    // Education level specific validations
+    if (educationLevel === 'Higher Education') {
+      if (!newStudent.semester) newErrors.semester = 'Semester is required';
+      if (!newStudent.course) newErrors.course = 'Course is required';
+      if (!newStudent.yearLevel) newErrors.yearLevel = 'Year level is required';
+      if (!newStudent.civil_status) newErrors.civil_status = 'Civil status is required';
+      if (!newStudent.email) newErrors.email = 'Email is required';
+    } else if (educationLevel === 'Senior High') {
+      if (!newStudent.gradeLevel) newErrors.gradeLevel = 'Grade level is required';
+      if (!newStudent.strand) newErrors.strand = 'Strand is required';
+    } else if (educationLevel === 'Basic Education') {
+      if (!newStudent.gradeLevel) newErrors.gradeLevel = 'Grade level is required';
+    }
+
+    // Siblings count validation
+    if (!newStudent.siblings_count && newStudent.siblings_count !== 0) {
+      newErrors.siblings_count = 'Number of siblings is required';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleAddStudent = async () => {
-    if (!validateForm()) return;
-    
+    setErrors({});
+
+    if (!validateForm()) {
+      // Scroll to the first error to make it visible to the user
+      setTimeout(() => {
+        const firstErrorField = Object.keys(errors)[0];
+        if (firstErrorField) {
+          const errorElement = document.querySelector(`[name="${firstErrorField}"]`);
+          if (errorElement) {
+            errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            errorElement.focus();
+          }
+        }
+      }, 100);
+      return;
+    }
+
     try {
       const userId = localStorage.getItem('userId');
       if (!userId) {
@@ -275,7 +343,7 @@ const validateForm = () => {
         return;
       }
 
-      // Sanitize date fields - convert empty strings to null
+      // Sanitize date fields
       const sanitizedStudent = {
         ...newStudent,
         birth_date: newStudent.birth_date || null,
@@ -299,41 +367,58 @@ const validateForm = () => {
           date_taken: result.date_taken || null,
         })),
       };
-      
-      const response = await fetch('/api/students', {
-        method: 'POST',
-        headers: { 
+
+      // Determine the API endpoint and method based on whether it's an update
+      const url = isUpdate && studentId
+        ? `/api/students/${studentId}`  // PUT for updates
+        : '/api/students';              // POST for creates
+
+      const method = isUpdate && studentId ? 'PUT' : 'POST';
+
+      console.log('Sending request:', { url, method, isUpdate, studentId });
+
+      const response = await fetch(url, {
+        method: method,
+        headers: {
           'Content-Type': 'application/json',
           'user-id': userId
         },
-        body: JSON.stringify({ 
-          ...sanitizedStudent, 
+        body: JSON.stringify({
+          ...sanitizedStudent,
           educationLevel,
           userId: userId
         }),
       });
 
-    if (response.ok) {
-      const studentData = await response.json();
-      localStorage.setItem('firstName', newStudent.firstName);
-      localStorage.setItem('lastName', newStudent.lastName);
-      onAddStudent(studentData);
-      setShowModal(false);
-      setNewStudent({
-        ...initialStudentState,
-        firstName: localStorage.getItem('firstName') || '',
-        lastName: localStorage.getItem('lastName') || '',
-      });
-      setEducationLevel('');
-      setErrors({});
-    } else {
-      const errorData = await response.json();
-      setErrors({ submit: errorData.message || 'Failed to add student' });
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Success:', result);
+
+        localStorage.setItem('firstName', newStudent.firstName);
+        localStorage.setItem('lastName', newStudent.lastName);
+        onAddStudent(result);
+        setShowModal(false);
+
+        // Reset form only if it's not an update
+        if (!isUpdate) {
+          setNewStudent({
+            ...initialStudentState,
+            firstName: localStorage.getItem('firstName') || '',
+            lastName: localStorage.getItem('lastName') || '',
+          });
+          setEducationLevel('');
+        }
+        setErrors({});
+      } else {
+        const errorData = await response.json();
+        console.error('Error response:', errorData);
+        setErrors({ submit: errorData.message || 'Failed to save student data' });
+      }
+    } catch (error) {
+      console.error('Network error:', error);
+      setErrors({ submit: 'Error submitting form' });
     }
-  } catch (error) {
-    setErrors({ submit: 'Error submitting form' });
-  }
-};
+  };
 
   if (!showModal) return null;
 
@@ -364,8 +449,7 @@ const validateForm = () => {
               St. Rita's College of Balingasag
             </h1>
             <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4 text-sm">
-              <p className="font-medium opacity-95">Senior High School Department</p>
-              <div className="hidden sm:block h-4 w-px bg-white/40 self-center"></div>
+
               <p className="font-medium opacity-95">GUIDANCE CENTER</p>
             </div>
           </div>
@@ -378,53 +462,56 @@ const validateForm = () => {
             STUDENT PERSONAL DATA SHEET
           </h1>
 
-{/* Education Level Selection */}
-<div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-  <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-    <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">1</span>
-    Education Level
-  </h2>
-  <select
-    value={educationLevel}
-    onChange={(e) => setEducationLevel(e.target.value)}
-    className={`w-full px-4 py-2 border ${errors.educationLevel ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition shadow-sm`}
-  >
-    <option value="">Select Education Level</option>
-    <option value="Basic Education">Basic Education</option>
-    <option value="Senior High">Senior High</option>
-    <option value="Higher Education">Higher Education</option>
-  </select>
-  {errors.educationLevel && <p className="mt-1 text-xs text-red-600">{errors.educationLevel}</p>}
-</div>
+          {/* Education Level Selection */}
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">1</span>
+              Education Level
+            </h2>
+            <select
+              value={educationLevel}
+              onChange={(e) => {
+                clearError('educationLevel');
+                setEducationLevel(e.target.value);
+              }}
+              className={`w-full px-4 py-2 border ${errors.educationLevel ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition shadow-sm`}
+            >
+              <option value="">Select Education Level</option>
+              <option value="Basic Education">Basic Education</option>
+              <option value="Senior High">Senior High</option>
+              <option value="Higher Education">Higher Education</option>
+            </select>
+            {errors.educationLevel && <p className="mt-1 text-xs text-red-600">{errors.educationLevel}</p>}
+          </div>
 
-{/* Education Level Indicator - Only shows for Basic Education and Senior High */}
-{(educationLevel === 'Basic Education' || educationLevel === 'Senior High') && (
-  <div className="bg-blue-50 p-4 rounded-lg mb-6 border border-blue-200">
-    <div className="flex items-center">
-      <svg className="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-      <span className="text-blue-800 font-medium">
-        {educationLevel === 'Basic Education' && 'Basic Education selected - For elementary and junior high school students'}
-        {educationLevel === 'Senior High' && 'Senior High School selected - For Grades 11 and 12 students'}
-      </span>
-    </div>
-  </div>
-)}
+          {/* Education Level Indicator - Only shows for Basic Education and Senior High */}
+          {(educationLevel === 'Basic Education' || educationLevel === 'Senior High') && (
+            <div className="bg-blue-50 p-4 rounded-lg mb-6 border border-blue-200">
+              <div className="flex items-center">
+                <svg className="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-blue-800 font-medium">
+                  {educationLevel === 'Basic Education' && 'Basic Education selected - For elementary and junior high school students'}
+                  {educationLevel === 'Senior High' && 'Senior High School selected - For Grades 11 and 12 students'}
+                </span>
+              </div>
+            </div>
+          )}
 
-{/* Higher Education Indicator - Only shows for Higher Education */}
-{educationLevel === 'Higher Education' && (
-  <div className="bg-green-50 p-4 rounded-lg mb-6 border border-green-200">
-    <div className="flex items-center">
-      <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-      <span className="text-green-800 font-medium">
-        Higher Education selected - For college students
-      </span>
-    </div>
-  </div>
-)}
+          {/* Higher Education Indicator - Only shows for Higher Education */}
+          {educationLevel === 'Higher Education' && (
+            <div className="bg-green-50 p-4 rounded-lg mb-6 border border-green-200">
+              <div className="flex items-center">
+                <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-green-800 font-medium">
+                  Higher Education selected - For college students
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Personal Information */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
@@ -432,7 +519,7 @@ const validateForm = () => {
               <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-sm">2</span>
               Personal Information
             </h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">School Year*</label>
@@ -446,7 +533,7 @@ const validateForm = () => {
                 />
                 {errors.schoolYear && <p className="mt-1 text-xs text-red-600">{errors.schoolYear}</p>}
               </div>
-              
+
               {educationLevel === 'Higher Education' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Semester*</label>
@@ -463,7 +550,7 @@ const validateForm = () => {
                   {errors.semester && <p className="mt-1 text-xs text-red-600">{errors.semester}</p>}
                 </div>
               )}
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   {educationLevel === 'Higher Education' ? 'Course & Year Level*' : 'Grade Level & Strand*'}
@@ -491,7 +578,7 @@ const validateForm = () => {
                       <option value="Grade 12">Grade 12</option>
                     </select>
                   )}
-                  
+
                   {educationLevel === 'Higher Education' && (
                     <select
                       name="yearLevel"
@@ -506,7 +593,7 @@ const validateForm = () => {
                       <option value="4th Year">4th Year</option>
                     </select>
                   )}
-                  
+
                   {educationLevel === 'Senior High' && (
                     <input
                       type="text"
@@ -517,7 +604,7 @@ const validateForm = () => {
                       placeholder="e.g., STEM"
                     />
                   )}
-                  
+
                   {educationLevel === 'Higher Education' && (
                     <input
                       type="text"
@@ -534,7 +621,7 @@ const validateForm = () => {
                 {errors.strand && <p className="mt-1 text-xs text-red-600">{errors.strand}</p>}
                 {errors.course && <p className="mt-1 text-xs text-red-600">{errors.course}</p>}
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Student Type*</label>
                 <div className="grid grid-cols-4 gap-2">
@@ -544,7 +631,10 @@ const validateForm = () => {
                         type="radio"
                         name="studentType"
                         checked={newStudent.studentType === type}
-                        onChange={() => setNewStudent({ ...newStudent, studentType: type })}
+                        onChange={() => {
+                          clearError('studentType');
+                          setNewStudent({ ...newStudent, studentType: type });
+                        }}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                       />
                       <span className="text-sm text-gray-700">{type}</span>
@@ -664,7 +754,7 @@ const validateForm = () => {
                     {errors.civil_status && <p className="mt-1 text-xs text-red-600">{errors.civil_status}</p>}
                   </div>
                 </div>
-                
+
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email*</label>
                   <input
@@ -771,68 +861,66 @@ const validateForm = () => {
               </div>
             </div>
 
-           {/* SACRAMENTS SECTION - Only show for Basic Education and Senior High */}
-  {(educationLevel === 'Basic Education' || educationLevel === 'Senior High') && (
-    <div className="mb-6">
-      <label className="block text-sm font-medium text-gray-700 mb-2">Sacraments Received</label>
-      <div className="overflow-x-auto">
-        <table className="min-w-full border border-gray-200 rounded-lg">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Sacrament</th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Received</th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Date</th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Church</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white">
-            {[
-              { sacrament: 'baptism', label: 'Baptism' },
-              { sacrament: 'firstCommunion', label: 'First Communion' },
-              { sacrament: 'confirmation', label: 'Confirmation' }
-            ].map(({ sacrament, label }) => (
-              <tr key={sacrament} className="hover:bg-gray-50">
-                <td className="px-4 py-2 text-sm font-medium text-gray-700">{label}</td>
-                <td className="px-4 py-2">
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={newStudent[sacrament].received || false}
-                      onChange={(e) => handleSacramentChange(sacrament, 'received', e.target.checked)}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                  </div>
-                </td>
-                <td className="px-4 py-2">
-                  <input
-                    type="date"
-                    value={newStudent[sacrament].date || ''}
-                    onChange={(e) => handleSacramentChange(sacrament, 'date', e.target.value)}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 ${
-                      !newStudent[sacrament].received ? 'bg-gray-100 text-gray-500' : ''
-                    }`}
-                    disabled={!newStudent[sacrament].received}
-                  />
-                </td>
-                <td className="px-4 py-2">
-                  <input
-                    type="text"
-                    value={newStudent[sacrament].church || ''}
-                    onChange={(e) => handleSacramentChange(sacrament, 'church', e.target.value)}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 ${
-                      !newStudent[sacrament].received ? 'bg-gray-100 text-gray-500' : ''
-                    }`}
-                    disabled={!newStudent[sacrament].received}
-                    placeholder="Church name"
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )}
+            {/* SACRAMENTS SECTION - Only show for Basic Education and Senior High */}
+            {(educationLevel === 'Basic Education' || educationLevel === 'Senior High') && (
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Sacraments Received</label>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full border border-gray-200 rounded-lg">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Sacrament</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Received</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Date</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">Church</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white">
+                      {[
+                        { sacrament: 'baptism', label: 'Baptism' },
+                        { sacrament: 'firstCommunion', label: 'First Communion' },
+                        { sacrament: 'confirmation', label: 'Confirmation' }
+                      ].map(({ sacrament, label }) => (
+                        <tr key={sacrament} className="hover:bg-gray-50">
+                          <td className="px-4 py-2 text-sm font-medium text-gray-700">{label}</td>
+                          <td className="px-4 py-2">
+                            <div className="flex items-center">
+                              <input
+                                type="checkbox"
+                                checked={newStudent[sacrament].received || false}
+                                onChange={(e) => handleSacramentChange(sacrament, 'received', e.target.checked)}
+                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                              />
+                            </div>
+                          </td>
+                          <td className="px-4 py-2">
+                            <input
+                              type="date"
+                              value={newStudent[sacrament].date || ''}
+                              onChange={(e) => handleSacramentChange(sacrament, 'date', e.target.value)}
+                              className={`w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 ${!newStudent[sacrament].received ? 'bg-gray-100 text-gray-500' : ''
+                                }`}
+                              disabled={!newStudent[sacrament].received}
+                            />
+                          </td>
+                          <td className="px-4 py-2">
+                            <input
+                              type="text"
+                              value={newStudent[sacrament].church || ''}
+                              onChange={(e) => handleSacramentChange(sacrament, 'church', e.target.value)}
+                              className={`w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 ${!newStudent[sacrament].received ? 'bg-gray-100 text-gray-500' : ''
+                                }`}
+                              disabled={!newStudent[sacrament].received}
+                              placeholder="Church name"
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
@@ -1262,7 +1350,10 @@ const validateForm = () => {
                       type="radio"
                       name="parentsMaritalStatus"
                       checked={newStudent.parentsMaritalStatus === status}
-                      onChange={() => setNewStudent({ ...newStudent, parentsMaritalStatus: status })}
+                      onChange={() => {
+                        clearError('parentsMaritalStatus');
+                        setNewStudent({ ...newStudent, parentsMaritalStatus: status });
+                      }}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                     />
                     <span className="ml-2 text-sm text-gray-700">{status}</span>
@@ -1280,7 +1371,10 @@ const validateForm = () => {
                       type="radio"
                       name="birth_order"
                       checked={newStudent.birth_order === order}
-                      onChange={() => setNewStudent({ ...newStudent, birth_order: order })}
+                      onChange={() => {
+                        clearError('birth_order');
+                        setNewStudent({ ...newStudent, birth_order: order });
+                      }}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                     />
                     <span className="ml-2 text-sm text-gray-700">{order}</span>
@@ -1291,7 +1385,10 @@ const validateForm = () => {
                     type="radio"
                     name="birth_order"
                     checked={!['1st', '2nd', '3rd', '4th', '5th', '6th', '7th'].includes(newStudent.birth_order)}
-                    onChange={() => setNewStudent({ ...newStudent, birth_order: 'other' })}
+                    onChange={() => {
+                      clearError('birth_order');
+                      setNewStudent({ ...newStudent, birth_order: 'other' });
+                    }}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                   />
                   <span className="ml-2 text-sm text-gray-700">Other</span>
@@ -1841,7 +1938,7 @@ const validateForm = () => {
                           type="text"
                           value={org.designation || ''}
                           onChange={(e) => handleOrganizationChange(index, 'designation', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text sm focus:ring-2 focus:ring-blue-500"
                           placeholder="Position/role"
                         />
                       </td>
@@ -1875,54 +1972,65 @@ const validateForm = () => {
               Health Information
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
-                <input
-                  type="text"
-                  name="weight"
-                  value={newStudent.weight || ''}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
-                  placeholder="e.g., 55"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Physical Condition</label>
-                <div className="flex gap-3">
-                  <label className="inline-flex items-center">
-                    <input
-                      type="radio"
-                      name="physicalCondition"
-                      checked={newStudent.physicalCondition === 'Good'}
-                      onChange={() => setNewStudent({ ...newStudent, physicalCondition: 'Good' })}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">Good</span>
-                  </label>
-                  <label className="inline-flex items-center">
-                    <input
-                      type="radio"
-                      name="physicalCondition"
-                      checked={newStudent.physicalCondition === 'Fair'}
-                      onChange={() => setNewStudent({ ...newStudent, physicalCondition: 'Fair' })}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">Fair</span>
-                  </label>
-                  <label className="inline-flex items-center">
-                    <input
-                      type="radio"
-                      name="physicalCondition"
-                      checked={newStudent.physicalCondition === 'Poor'}
-                      onChange={() => setNewStudent({ ...newStudent, physicalCondition: 'Poor' })}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">Poor</span>
-                  </label>
-                </div>
-              </div>
-            </div>
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
+    <input
+      type="text"
+      name="weight"
+      value={newStudent.weight || ''}
+      onChange={handleInputChange}
+      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
+      placeholder="e.g., 55"
+    />
+  </div>
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">Height (cm)</label>
+    <input
+      type="text"
+      name="height"
+      value={newStudent.height || ''}
+      onChange={handleInputChange}
+      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
+      placeholder="e.g., 165"
+    />
+  </div>
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">Physical Condition</label>
+    <div className="flex gap-3">
+      <label className="inline-flex items-center">
+        <input
+          type="radio"
+          name="physicalCondition"
+          checked={newStudent.physicalCondition === 'Good'}
+          onChange={() => setNewStudent({ ...newStudent, physicalCondition: 'Good' })}
+          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+        />
+        <span className="ml-2 text-sm text-gray-700">Good</span>
+      </label>
+      <label className="inline-flex items-center">
+        <input
+          type="radio"
+          name="physicalCondition"
+          checked={newStudent.physicalCondition === 'Fair'}
+          onChange={() => setNewStudent({ ...newStudent, physicalCondition: 'Fair' })}
+          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+        />
+        <span className="ml-2 text-sm text-gray-700">Fair</span>
+      </label>
+      <label className="inline-flex items-center">
+        <input
+          type="radio"
+          name="physicalCondition"
+          checked={newStudent.physicalCondition === 'Poor'}
+          onChange={() => setNewStudent({ ...newStudent, physicalCondition: 'Poor' })}
+          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+        />
+        <span className="ml-2 text-sm text-gray-700">Poor</span>
+      </label>
+    </div>
+  </div>
+</div>
 
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-1">Any physical handicap or health problem</label>
@@ -1955,7 +2063,7 @@ const validateForm = () => {
                     name="health_problem_details"
                     value={newStudent.health_problem_details || ''}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text sm transition"
                     placeholder="Specify details"
                   />
                 </div>
@@ -2139,33 +2247,31 @@ const validateForm = () => {
                 {errors.signature_date && <p className="mt-1 text-xs text-red-600">{errors.signature_date}</p>}
               </div>
             </div>
-            {newStudent.age < 18 && (
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Signature of Parent/Guardian over printed name*</label>
-                  <input
-                    type="text"
-                    name="parent_signature_name"
-                    value={newStudent.parent_signature_name || ''}
-                    onChange={handleInputChange}
-                    className={`w-full px-3 py-2 border ${errors.parent_signature_name ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition`}
-                    placeholder="e.g., Maria Dela Cruz"
-                  />
-                  {errors.parent_signature_name && <p className="mt-1 text-xs text-red-600">{errors.parent_signature_name}</p>}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Date Signed*</label>
-                  <input
-                    type="date"
-                    name="parent_signature_date"
-                    value={newStudent.parent_signature_date || ''}
-                    onChange={handleInputChange}
-                    className={`w-full px-3 py-2 border ${errors.parent_signature_date ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition`}
-                  />
-                  {errors.parent_signature_date && <p className="mt-1 text-xs text-red-600">{errors.parent_signature_date}</p>}
-                </div>
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Signature of Parent/Guardian over printed name*</label>
+                <input
+                  type="text"
+                  name="parent_signature_name"
+                  value={newStudent.parent_signature_name || ''}
+                  onChange={handleInputChange}
+                  className={`w-full px-3 py-2 border ${errors.parent_signature_name ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition`}
+                  placeholder="e.g., Maria Dela Cruz"
+                />
+                {errors.parent_signature_name && <p className="mt-1 text-xs text-red-600">{errors.parent_signature_name}</p>}
               </div>
-            )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Date Signed*</label>
+                <input
+                  type="date"
+                  name="parent_signature_date"
+                  value={newStudent.parent_signature_date || ''}
+                  onChange={handleInputChange}
+                  className={`w-full px-3 py-2 border ${errors.parent_signature_date ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition`}
+                />
+                {errors.parent_signature_date && <p className="mt-1 text-xs text-red-600">{errors.parent_signature_date}</p>}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -2178,6 +2284,14 @@ const validateForm = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span>Please fill in all required fields marked with *</span>
+              </div>
+            )}
+            {errors.submit && (
+              <div className="flex items-center text-red-600 mt-2">
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{errors.submit}</span>
               </div>
             )}
           </div>
@@ -2202,10 +2316,9 @@ const validateForm = () => {
               type="button"
               onClick={handleAddStudent}
               className="px-4 py-2 bg-blue-600 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center justify-center transition-colors w-full sm:w-auto"
-              disabled={Object.keys(errors).length > 0}
             >
               <FiSave className="mr-2" />
-              Save Student
+              {isUpdate ? 'Update Student' : 'Save Student'} {/* Dynamic button text */}
             </button>
           </div>
         </div>

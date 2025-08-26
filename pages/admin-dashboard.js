@@ -24,70 +24,7 @@ export default function AdminDashboard() {
     end: "17:00"
   });
   const [showModal, setShowModal] = useState(false);
-  const [newStudent, setNewStudent] = useState({
-    studentType: 'New',
-    studentPhotoUrl: '',
-    lastName: '',
-    givenName: '',
-    middleName: '',
-    suffix: '',
-    gender: '',
-    citizenship: '',
-    age: '',
-    address: '',
-    birthMonth: '',
-    birthDay: '',
-    birthYear: '',
-    birthPlace: '',
-    contactNumber: '',
-    religion: '',
-    baptism: { received: false, date: '', church: '' },
-    firstCommunion: { received: false, date: '', church: '' },
-    confirmation: { received: false, date: '', church: '' },
-    fatherName: '',
-    fatherOccupation: '',
-    fatherStatus: '',
-    fatherEducation: '',
-    motherName: '',
-    motherOccupation: '',
-    motherStatus: '',
-    motherEducation: '',
-    parentsMaritalStatus: '',
-    residenceType: '',
-    languagesSpoken: '',
-    familyIncome: '',
-    financialSupport: [],
-    otherFinancialSupport: '',
-    leisureActivities: [],
-    otherLeisureActivities: '',
-    specialInterests: '',
-    livingWithParents: true,
-    guardianName: '',
-    guardianRelation: '',
-    otherGuardianRelation: '',
-    guardianAddress: '',
-    siblings: Array(4).fill().map(() => ({ name: '', age: '', school: '', status: '', occupation: '' })),
-    educationBackground: {
-      preschool: { school: '', awards: '', year: '' },
-      gradeSchool: { school: '', awards: '', year: '' },
-      highSchool: { school: '', awards: '', year: '' },
-    },
-    organizations: Array(4).fill().map(() => ({ year: '', organization: '', designation: '' })),
-    healthProblem: 'No',
-    healthProblemDetails: '',
-    generalCondition: '',
-    underMedication: 'No',
-    medicationDetails: '',
-    specialCare: 'No',
-    specialCareDetails: '',
-    lastDoctorVisit: '',
-    doctorVisitReason: '',
-    testResults: Array(3).fill().map(() => ({ test: '', date: '', rating: '' })),
-    signatureName: '',
-    signatureDate: '',
-    parentSignatureName: '',
-    parentSignatureDate: '',
-  });
+  const [newStudent, setNewStudent] = useState({});
 
   useEffect(() => {
     const storedFirstName = localStorage.getItem('firstName') || 'Dr. Maria';
@@ -156,8 +93,6 @@ export default function AdminDashboard() {
           <SidebarItem icon={FiGrid} label="Dashboard" activeTab={activeTab} setActiveTab={setActiveTab} isSidebarOpen={isSidebarOpen} />
           <SidebarItem icon={FiCalendar} label="Availability Schedule" activeTab={activeTab} setActiveTab={setActiveTab} isSidebarOpen={isSidebarOpen} />
           <SidebarItem icon={FiUsers} label="Manage Users" activeTab={activeTab} setActiveTab={setActiveTab} isSidebarOpen={isSidebarOpen} />
-          <SidebarItem icon={FiFileText} label="Student Forms" activeTab={activeTab} setActiveTab={setActiveTab} isSidebarOpen={isSidebarOpen} />
-          
           <div>
             <div 
               className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 ${activeTab.startsWith("PDS") ? "bg-gradient-to-r from-blue-50 to-purple-50 text-blue-600 shadow-sm" : "hover:bg-gray-50"}`}
@@ -264,7 +199,6 @@ export default function AdminDashboard() {
           {activeTab === "Dashboard" && <Dashboard stats={stats} />}
           {activeTab === "Availability Schedule" && <AvailabilitySchedule selectedDate={selectedDate} setSelectedDate={setSelectedDate} availabilityHours={availabilityHours} setAvailabilityHours={setAvailabilityHours} />}
           {activeTab === "Manage Users" && <ManageUsers />}
-          {activeTab === "Student Forms" && <StudentForms />}
           {activeTab === "Reports" && <Reports />}
           {activeTab === "Logs" && <Logs />}
           {activeTab.startsWith("PDS") && (
@@ -1232,15 +1166,6 @@ function ManageUsers() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function StudentForms() {
-  return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">Student Forms</h3>
-      <p className="text-gray-600">Student forms management will be implemented here.</p>
     </div>
   );
 }

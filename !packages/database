@@ -189,4 +189,4 @@ CREATE TABLE test_results (
     rating VARCHAR(50)
 );
 
-CREATE INDEX idx_test_results_student_id ON test_results(student_id);
+CREATE INDEX idx_test_results_student_id ON test_results(student_id); 
