@@ -126,11 +126,54 @@ const StudentPDSModal = ({ showModal, setShowModal, onAddStudent, initialData, i
   useEffect(() => {
     if (isUpdate && initialData) {
       console.log('Populating form with initial data:', initialData);
-      setNewStudent(initialData);
-      setEducationLevel(initialData.educationLevel || '');
-      setStudentId(initialData.id); // Set the student ID for updates
+
+      // Convert string fields back to arrays for checkbox handling
+      const processedData = {
+        ...initialData,
+        financial_support: typeof initialData.financial_support === 'string'
+          ? initialData.financial_support.split(',')
+          : initialData.financial_support || []
+      };
+
+      setNewStudent(processedData);
+      setEducationLevel(processedData.educationLevel || '');
+      setStudentId(processedData.id);
     }
   }, [isUpdate, initialData]);
+
+  useEffect(() => {
+    // Only clear fields if educationLevel actually changes and is not empty
+    if (educationLevel) {
+      setNewStudent(prev => {
+        const updatedStudent = { ...prev };
+
+        // Clear fields based on the selected education level
+        if (educationLevel === 'Basic Education') {
+          // For Basic Education, clear Higher Education fields
+          updatedStudent.semester = '';
+          updatedStudent.course = '';
+          updatedStudent.yearLevel = '';
+          updatedStudent.civil_status = '';
+          updatedStudent.email = '';
+          updatedStudent.city_address = '';
+        } else if (educationLevel === 'Senior High') {
+          // For Senior High, clear Higher Education fields
+          updatedStudent.semester = '';
+          updatedStudent.course = '';
+          updatedStudent.yearLevel = '';
+          updatedStudent.civil_status = '';
+          updatedStudent.email = '';
+          updatedStudent.city_address = '';
+        } else if (educationLevel === 'Higher Education') {
+          // For Higher Education, clear Basic Education/Senior High fields
+          updatedStudent.gradeLevel = '';
+          updatedStudent.strand = '';
+        }
+
+        return updatedStudent;
+      });
+    }
+  }, [educationLevel]); // This will run whenever educationLevel changes
 
 
   // Function to clear specific errors when fields are updated
@@ -268,10 +311,20 @@ const StudentPDSModal = ({ showModal, setShowModal, onAddStudent, initialData, i
   const handleCheckboxChange = (field, value) => {
     clearError(field);
 
-    const current = newStudent[field] || [];
+    let current = newStudent[field] || [];
+
+    // If it's a string (from database), convert to array and filter empty strings
+    if (typeof current === 'string') {
+      current = current.split(',').filter(item => item.trim() !== '');
+    }
+
+    // Ensure current is always an array and filter out any empty strings
+    current = Array.isArray(current) ? current.filter(item => item && item.trim() !== '') : [];
+
     const updated = current.includes(value)
       ? current.filter(item => item !== value)
       : [...current, value];
+
     setNewStudent({ ...newStudent, [field]: updated });
   };
 
@@ -350,6 +403,9 @@ const StudentPDSModal = ({ showModal, setShowModal, onAddStudent, initialData, i
         signature_date: newStudent.signature_date || null,
         parent_signature_date: newStudent.parent_signature_date || null,
         last_doctor_visit: newStudent.last_doctor_visit || null,
+        financial_support: Array.isArray(newStudent.financial_support)
+          ? newStudent.financial_support.filter(item => item && item.trim() !== '').join(',')
+          : newStudent.financial_support,
         baptism: {
           ...newStudent.baptism,
           date: newStudent.baptism.date || null,
@@ -473,6 +529,14 @@ const StudentPDSModal = ({ showModal, setShowModal, onAddStudent, initialData, i
               onChange={(e) => {
                 clearError('educationLevel');
                 setEducationLevel(e.target.value);
+
+                // Also clear any education-related errors
+                const educationErrors = ['semester', 'course', 'yearLevel', 'gradeLevel', 'strand', 'civil_status', 'email'];
+                const newErrors = { ...errors };
+                educationErrors.forEach(error => {
+                  delete newErrors[error];
+                });
+                setErrors(newErrors);
               }}
               className={`w-full px-4 py-2 border ${errors.educationLevel ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition shadow-sm`}
             >
@@ -1711,7 +1775,12 @@ const StudentPDSModal = ({ showModal, setShowModal, onAddStudent, initialData, i
                     <label key={option} className="flex items-center">
                       <input
                         type="checkbox"
-                        checked={newStudent.financial_support?.includes(option) || false}
+                        checked={
+                          (Array.isArray(newStudent.financial_support)
+                            ? newStudent.financial_support.includes(option)
+                            : (newStudent.financial_support || '').includes(option)
+                          ) || false
+                        }
                         onChange={() => handleCheckboxChange('financial_support', option)}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       />
@@ -1972,65 +2041,65 @@ const StudentPDSModal = ({ showModal, setShowModal, onAddStudent, initialData, i
               Health Information
             </h2>
 
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
-    <input
-      type="text"
-      name="weight"
-      value={newStudent.weight || ''}
-      onChange={handleInputChange}
-      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
-      placeholder="e.g., 55"
-    />
-  </div>
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">Height (cm)</label>
-    <input
-      type="text"
-      name="height"
-      value={newStudent.height || ''}
-      onChange={handleInputChange}
-      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
-      placeholder="e.g., 165"
-    />
-  </div>
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">Physical Condition</label>
-    <div className="flex gap-3">
-      <label className="inline-flex items-center">
-        <input
-          type="radio"
-          name="physicalCondition"
-          checked={newStudent.physicalCondition === 'Good'}
-          onChange={() => setNewStudent({ ...newStudent, physicalCondition: 'Good' })}
-          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-        />
-        <span className="ml-2 text-sm text-gray-700">Good</span>
-      </label>
-      <label className="inline-flex items-center">
-        <input
-          type="radio"
-          name="physicalCondition"
-          checked={newStudent.physicalCondition === 'Fair'}
-          onChange={() => setNewStudent({ ...newStudent, physicalCondition: 'Fair' })}
-          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-        />
-        <span className="ml-2 text-sm text-gray-700">Fair</span>
-      </label>
-      <label className="inline-flex items-center">
-        <input
-          type="radio"
-          name="physicalCondition"
-          checked={newStudent.physicalCondition === 'Poor'}
-          onChange={() => setNewStudent({ ...newStudent, physicalCondition: 'Poor' })}
-          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-        />
-        <span className="ml-2 text-sm text-gray-700">Poor</span>
-      </label>
-    </div>
-  </div>
-</div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
+                <input
+                  type="text"
+                  name="weight"
+                  value={newStudent.weight || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
+                  placeholder="e.g., 55"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Height (cm)</label>
+                <input
+                  type="text"
+                  name="height"
+                  value={newStudent.height || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition"
+                  placeholder="e.g., 165"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Physical Condition</label>
+                <div className="flex gap-3">
+                  <label className="inline-flex items-center">
+                    <input
+                      type="radio"
+                      name="physicalCondition"
+                      checked={newStudent.physicalCondition === 'Good'}
+                      onChange={() => setNewStudent({ ...newStudent, physicalCondition: 'Good' })}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Good</span>
+                  </label>
+                  <label className="inline-flex items-center">
+                    <input
+                      type="radio"
+                      name="physicalCondition"
+                      checked={newStudent.physicalCondition === 'Fair'}
+                      onChange={() => setNewStudent({ ...newStudent, physicalCondition: 'Fair' })}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Fair</span>
+                  </label>
+                  <label className="inline-flex items-center">
+                    <input
+                      type="radio"
+                      name="physicalCondition"
+                      checked={newStudent.physicalCondition === 'Poor'}
+                      onChange={() => setNewStudent({ ...newStudent, physicalCondition: 'Poor' })}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Poor</span>
+                  </label>
+                </div>
+              </div>
+            </div>
 
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-1">Any physical handicap or health problem</label>

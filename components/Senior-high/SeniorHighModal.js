@@ -20,8 +20,6 @@ const EDUCATION_LEVELS = [
   'High School',
   'Some College',
   'Some College Degree',
-  'MS/MA',
-  'PhD'
 ];
 const FINANCIAL_SUPPORT_OPTIONS = ['Parents', 'Grandparents', 'Others'];
 const FAMILY_ACTIVITIES = ['Listening to radio', 'Watching TV', 'Picnic', 'Others'];

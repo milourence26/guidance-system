@@ -1,4 +1,4 @@
-//pages/api/students/appoinments/list.js
+// pages/api/students/appointments/list.js
 import pool from '@/lib/db';
 
 export default async function handler(req, res) {
@@ -14,7 +14,7 @@ export default async function handler(req, res) {
         SELECT 
           id, 
           appointment_date AS date, 
-          appointment_time AS time, 
+          appointment_time,
           counselor, 
           status, 
           purpose AS type 
@@ -25,7 +25,21 @@ export default async function handler(req, res) {
       const result = await client.query(query, [userId]);
       client.release();
 
-      res.status(200).json(result.rows);
+      // Format the time for display
+      const formattedAppointments = result.rows.map(appointment => {
+        const timeParts = appointment.appointment_time.split(':');
+        let hours = parseInt(timeParts[0]);
+        const minutes = timeParts[1];
+        const period = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12 || 12; // Convert to 12-hour format
+        
+        return {
+          ...appointment,
+          time: `${hours}:${minutes} ${period}`
+        };
+      });
+
+      res.status(200).json(formattedAppointments);
     } catch (error) {
       console.error('Error fetching appointments:', error);
       res.status(500).json({ error: 'Internal server error' });

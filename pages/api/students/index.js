@@ -1,4 +1,3 @@
-// pages/api/students/index.js
 import pool from '@/lib/db';
 
 function normalizeEmptyToNull(obj) {
@@ -18,78 +17,7 @@ export default async function handler(req, res) {
   const client = await pool.connect();
 
   try {
-    if (req.method === 'GET') {
-      // Handle GET request - Fetch student data
-      const { userId } = req.query;
-      
-      if (!userId) {
-        return res.status(400).json({ message: 'User ID is required' });
-      }
-
-      // Get the most recent student record for this user
-      const studentQuery = `
-        SELECT * FROM pds_students 
-        WHERE user_id = $1 
-        ORDER BY created_at DESC 
-        LIMIT 1
-      `;
-      const studentResult = await client.query(studentQuery, [userId]);
-      
-      if (studentResult.rows.length === 0) {
-        return res.status(404).json({ message: 'Student not found' });
-      }
-      
-      const student = studentResult.rows[0];
-      const studentId = student.id;
-      
-      // Get related data from other tables
-      const [
-        familyInfo,
-        parents,
-        sacraments,
-        leisureActivities,
-        guardian,
-        siblings,
-        educationalBackground,
-        organizations,
-        healthInfo,
-        testResults
-      ] = await Promise.all([
-        client.query('SELECT * FROM family_info WHERE student_id = $1', [studentId]),
-        client.query('SELECT * FROM parents WHERE student_id = $1', [studentId]),
-        client.query('SELECT * FROM sacraments WHERE student_id = $1', [studentId]),
-        client.query('SELECT * FROM leisure_activities WHERE student_id = $1', [studentId]),
-        client.query('SELECT * FROM if_not_with_parents WHERE student_id = $1', [studentId]),
-        client.query('SELECT * FROM siblings WHERE student_id = $1', [studentId]),
-        client.query('SELECT * FROM educational_background WHERE student_id = $1', [studentId]),
-        client.query('SELECT * FROM organizations WHERE student_id = $1', [studentId]),
-        client.query('SELECT * FROM health_info WHERE student_id = $1', [studentId]),
-        client.query('SELECT * FROM test_results WHERE student_id = $1', [studentId])
-      ]);
-      
-      // Separate father and mother data
-      const fatherData = parents.rows.filter(p => p.parent_type === 'father');
-      const motherData = parents.rows.filter(p => p.parent_type === 'mother');
-      
-      // Combine all data
-      const studentData = {
-        ...student,
-        family_info: familyInfo.rows,
-        father: fatherData,
-        mother: motherData,
-        sacraments: sacraments.rows,
-        leisure_activities: leisureActivities.rows,
-        guardian: guardian.rows,
-        siblings: siblings.rows,
-        educational_background: educationalBackground.rows,
-        organizations: organizations.rows,
-        health_info: healthInfo.rows,
-        test_results: testResults.rows
-      };
-      
-      res.status(200).json(studentData);
-
-    } else if (req.method === 'POST') {
+    if (req.method === 'POST') {
       // Handle POST request - Create new student data
       const normalizedBody = normalizeEmptyToNull(req.body);
       const {
@@ -406,7 +334,7 @@ export default async function handler(req, res) {
         studentId: studentId 
       });
     } else {
-      res.setHeader('Allow', ['GET', 'POST']);
+      res.setHeader('Allow', ['POST']);
       res.status(405).end(`Method ${req.method} Not Allowed`);
     }
   } catch (error) {

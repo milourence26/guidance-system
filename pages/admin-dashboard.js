@@ -4,11 +4,13 @@ import { useRouter } from 'next/router';
 import {
   FiMenu, FiGrid, FiUsers, FiFileText, FiUser, FiLogOut, FiChevronDown, FiSave,
   FiChevronRight, FiBook, FiAward, FiHome, FiCalendar, FiClock, FiSettings,
-  FiBell, FiSearch, FiBarChart, FiTrendingUp, FiUserCheck, FiPlus, FiEdit, FiTrash2
+  FiBell, FiSearch, FiBarChart, FiTrendingUp, FiUserCheck, FiPlus, FiEdit, FiTrash2,FiUserPlus ,
+  FiRefreshCw 
 } from "react-icons/fi";
 import HigherEdForm from '../components/Higher-ed/higher-ed-form';
 import BasicEdForm from '../components/Basic-ed/BasicEdForm';
 import SeniorHighSchoolForm from '../components/Senior-high/SeniorHighForm';
+import AppointmentDetailsModal from '../components/AppoinmentDetailsModal';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -52,12 +54,12 @@ export default function AdminDashboard() {
     }
   };
 
-  const stats = [
-    { title: "Total Students", value: "0", change: "+0%", icon: FiUsers, color: "bg-blue-500" },
-    { title: "Pending Forms", value: "0", change: "+0%", icon: FiFileText, color: "bg-orange-500" },
-    { title: "Completed Sessions", value: "0", change: "+0%", icon: FiUserCheck, color: "bg-green-500" },
-    { title: "This Month", value: "0", change: "+0%", icon: FiTrendingUp, color: "bg-purple-500" },
-  ];
+const [stats, setStats] = useState({
+  totalStudents: { value: 0, change: "+0%" },
+  pendingForms: { value: 0, change: "+0%" },
+  completedSessions: { value: 0, change: "+0%" },
+  thisMonth: { value: 0, change: "+0%" }
+});
 
   const fullname = `${firstName} ${lastName}`;
 
@@ -91,8 +93,8 @@ export default function AdminDashboard() {
 
         <nav className="flex-1 p-4 space-y-2">
           <SidebarItem icon={FiGrid} label="Dashboard" activeTab={activeTab} setActiveTab={setActiveTab} isSidebarOpen={isSidebarOpen} />
-          <SidebarItem icon={FiCalendar} label="Availability Schedule" activeTab={activeTab} setActiveTab={setActiveTab} isSidebarOpen={isSidebarOpen} />
           <SidebarItem icon={FiUsers} label="Manage Users" activeTab={activeTab} setActiveTab={setActiveTab} isSidebarOpen={isSidebarOpen} />
+          <SidebarItem icon={FiCalendar} label="Appointments" activeTab={activeTab} setActiveTab={setActiveTab} isSidebarOpen={isSidebarOpen} />
           <div>
             <div 
               className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 ${activeTab.startsWith("PDS") ? "bg-gradient-to-r from-blue-50 to-purple-50 text-blue-600 shadow-sm" : "hover:bg-gray-50"}`}
@@ -196,8 +198,8 @@ export default function AdminDashboard() {
         </header>
 
         <div className="p-6">
-          {activeTab === "Dashboard" && <Dashboard stats={stats} />}
-          {activeTab === "Availability Schedule" && <AvailabilitySchedule selectedDate={selectedDate} setSelectedDate={setSelectedDate} availabilityHours={availabilityHours} setAvailabilityHours={setAvailabilityHours} />}
+          {activeTab === "Dashboard" && <Dashboard stats={stats} onStatsUpdate={setStats} />}
+          {activeTab === 'Appointments' && <Appointments />}
           {activeTab === "Manage Users" && <ManageUsers />}
           {activeTab === "Reports" && <Reports />}
           {activeTab === "Logs" && <Logs />}
@@ -244,198 +246,456 @@ function SidebarSubItem({ icon: Icon, label, activeTab, setActiveTab }) {
   );
 }
 
-function Dashboard({ stats }) {
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <div key={index} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm font-medium">{stat.title}</p>
-                <p className="text-2xl font-bold text-gray-800 mt-1">{stat.value}</p>
-                <p className={`text-sm mt-1 ${stat.change.startsWith('+') ? 'text-green-600' : 'text-red-500'}`}>
-                  {stat.change} from last month
-                </p>
-              </div>
-              <div className={`w-12 h-12 ${stat.color} rounded-xl flex items-center justify-center`}>
-                <stat.icon size={24} className="text-white" />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+function Dashboard({ stats, onStatsUpdate }) {
+  const [realStats, setRealStats] = useState(stats);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
 
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Activity</h3>
-        <div className="space-y-4">
-          {[
-            { action: "New student registration", user: "Juan Dela Cruz", time: "2 hours ago", type: "info" },
-            { action: "Form submission completed", user: "Maria Garcia", time: "4 hours ago", type: "success" },
-            { action: "Counseling session scheduled", user: "Pedro Santos", time: "6 hours ago", type: "warning" },
-          ].map((activity, index) => (
-            <div key={index} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
-              <div className={`w-2 h-2 rounded-full ${
-                activity.type === 'success' ? 'bg-green-500' : 
-                activity.type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
-              }`}></div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-800">{activity.action}</p>
-                <p className="text-xs text-gray-500">{activity.user} • {activity.time}</p>
-              </div>
-            </div>
-          ))}
+  useEffect(() => {
+    fetchDashboardStats();
+  }, []);
+
+  const fetchDashboardStats = async () => {
+    try {
+      setIsLoading(true);
+      const res = await fetch('/api/admin/dashboard-stats', {
+        headers: {
+          'x-usertype': localStorage.getItem('usertype') || '',
+          'x-user-id': localStorage.getItem('userId') || '',
+        },
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        setRealStats(data);
+        if (onStatsUpdate) onStatsUpdate(data);
+      } else {
+        setError('Failed to fetch dashboard data');
+      }
+    } catch (error) {
+      setError('Network error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const StatCard = ({ title, value, change, icon: Icon, color }) => (
+    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+      <div className="flex items-center justify-between mb-4">
+        <div className={`p-3 rounded-xl ${color}`}>
+          <Icon size={24} className="text-white" />
         </div>
+        <span className={`text-sm font-medium ${
+          change.includes('+') ? 'text-green-600' : 'text-red-600'
+        }`}>
+          {change}
+        </span>
+      </div>
+      <div>
+        <h3 className="text-2xl font-bold text-gray-800 mb-1">
+          {isLoading ? '...' : value.toLocaleString()}
+        </h3>
+        <p className="text-sm text-gray-600">{title}</p>
       </div>
     </div>
   );
-}
 
-function AvailabilitySchedule({ selectedDate, setSelectedDate, availabilityHours, setAvailabilityHours }) {
-  const [availableDays, setAvailableDays] = useState([1, 2, 3, 4, 5]);
-  const [isAvailable, setIsAvailable] = useState(false);
-  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const today = new Date();
-  const currentMonth = today.getMonth();
-  const currentYear = today.getFullYear();
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-  const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
-
-  useEffect(() => {
-    const dayOfWeek = selectedDate.getDay();
-    setIsAvailable(availableDays.includes(dayOfWeek));
-  }, [selectedDate, availableDays]);
-
-  const toggleDay = (dayIndex) => {
-    setAvailableDays(prev => 
-      prev.includes(dayIndex) 
-        ? prev.filter(d => d !== dayIndex)
-        : [...prev, dayIndex]
-    );
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-800">Schedule Calendar</h3>
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center space-x-1">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-xs text-gray-600">Available</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                <span className="text-xs text-gray-600">Unavailable</span>
-              </div>
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-6">
+          <div className="flex items-center gap-3">
+            <div className="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center">
+              <span className="text-red-600 text-sm">!</span>
             </div>
+            <p className="text-red-700">{error}</p>
           </div>
-          
-          <div className="grid grid-cols-7 gap-1 mb-4">
-            {dayNames.map(day => (
-              <div key={day} className="p-2 text-center text-xs font-medium text-gray-500">
-                {day.slice(0, 3)}
-              </div>
-            ))}
-          </div>
-          
-          <div className="grid grid-cols-7 gap-1">
-            {Array.from({ length: firstDayOfMonth }, (_, i) => (
-              <div key={`empty-${i}`} className="p-2"></div>
-            ))}
-            
-            {Array.from({ length: daysInMonth }, (_, i) => {
-              const date = i + 1;
-              const currentDate = new Date(currentYear, currentMonth, date);
-              const dayOfWeek = currentDate.getDay();
-              const isToday = date === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
-              const isAvailableDay = availableDays.includes(dayOfWeek);
-              
-              return (
-                <button
-                  key={date}
-                  className={`p-2 text-sm rounded-lg transition-colors ${
-                    isToday 
-                      ? 'bg-blue-500 text-white font-medium' 
-                      : isAvailableDay 
-                        ? 'bg-green-50 text-green-700 hover:bg-green-100' 
-                        : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
-                  }`}
-                  onClick={() => setSelectedDate(new Date(currentYear, currentMonth, date))}
-                >
-                  {date}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Availability Settings</h3>
-          
-          <div className="mb-6">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Available Days</h4>
-            <div className="flex flex-wrap gap-2">
-              {dayNames.map((day, index) => (
-                <button
-                  key={day}
-                  className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                    availableDays.includes(index) 
-                      ? 'bg-green-500 text-white' 
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                  onClick={() => toggleDay(index)}
-                >
-                  {day.slice(0, 3)}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="mb-6">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Available Hours</h4>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">Start Time</label>
-                <input
-                  type="time"
-                  value={availabilityHours.start}
-                  onChange={(e) => setAvailabilityHours({ ...availabilityHours, start: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">End Time</label>
-                <input
-                  type="time"
-                  value={availabilityHours.end}
-                  onChange={(e) => setAvailabilityHours({ ...availabilityHours, end: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-          </div>
-
           <button
-            className="w-full px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+            onClick={fetchDashboardStats}
+            className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
           >
-            <FiSave size={16} />
-            Save Schedule
+            Retry
           </button>
         </div>
       </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          title="Total Students"
+          value={realStats.totalStudents?.value || 0}
+          change={realStats.totalStudents?.change || "+0%"}
+          icon={FiUsers}
+          color="bg-blue-500"
+        />
+        <StatCard
+          title="Pending Forms"
+          value={realStats.pendingForms?.value || 0}
+          change={realStats.pendingForms?.change || "+0%"}
+          icon={FiFileText}
+          color="bg-orange-500"
+        />
+        <StatCard
+          title="Completed Sessions"
+          value={realStats.completedSessions?.value || 0}
+          change={realStats.completedSessions?.change || "+0%"}
+          icon={FiUserCheck}
+          color="bg-green-500"
+        />
+        <StatCard
+          title="This Month"
+          value={realStats.thisMonth?.value || 0}
+          change={realStats.thisMonth?.change || "+0%"}
+          icon={FiTrendingUp}
+          color="bg-purple-500"
+        />
+      </div>
     </div>
   );
 }
 
+function Appointments() {
+  const [appointments, setAppointments] = useState([]);
+  const [filteredAppointments, setFilteredAppointments] = useState([]);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchAppointments();
+  }, []);
+
+  useEffect(() => {
+    filterAppointments();
+  }, [appointments, statusFilter, dateFilter, searchQuery]);
+
+  const fetchAppointments = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await fetch('/api/advocate/appointments/view');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setAppointments(data);
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+      setError('Failed to fetch appointments. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const filterAppointments = () => {
+    let filtered = appointments;
+
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(app => app.status === statusFilter);
+    }
+
+    if (dateFilter) {
+      filtered = filtered.filter(app => app.date === dateFilter);
+    }
+
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(app => 
+        app.name?.toLowerCase().includes(query) ||
+        (app.email && app.email.toLowerCase().includes(query)) ||
+        app.purpose?.toLowerCase().includes(query) ||
+        (app.grade_section && app.grade_section.toLowerCase().includes(query))
+      );
+    }
+
+    setFilteredAppointments(filtered);
+  };
+
+  const updateAppointmentStatus = async (appointmentId, newStatus, counselorNotes = null, counselorName = null) => {
+    try {
+      const response = await fetch('/api/advocate/appointments/manage', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          appointmentId, 
+          status: newStatus,
+          counselor_notes: counselorNotes,
+          counselor: counselorName
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      fetchAppointments();
+      if (showDetailsModal) {
+        setShowDetailsModal(false);
+      }
+    } catch (error) {
+      console.error('Error updating appointment:', error);
+      setError('Failed to update appointment. Please try again.');
+    }
+  };
+
+  const handleViewDetails = (appointment) => {
+    setSelectedAppointment(appointment);
+    setShowDetailsModal(true);
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'confirmed': return 'text-green-700 bg-green-50';
+      case 'pending': return 'text-amber-700 bg-amber-50';
+      case 'cancelled': return 'text-red-700 bg-red-50';
+      case 'completed': return 'text-blue-700 bg-blue-50';
+      default: return 'text-gray-700 bg-gray-50';
+    }
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm">
+        <div className="flex justify-center items-center py-16">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+            <span className="text-gray-600 text-sm">Loading appointments...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm">
+        <div className="flex justify-center items-center py-16">
+          <div className="text-center">
+            <div className="text-red-500 text-3xl mb-4">⚠️</div>
+            <h4 className="text-lg font-medium text-gray-800 mb-2">Error Loading Appointments</h4>
+            <p className="text-gray-600 text-sm mb-4">{error}</p>
+            <button
+              onClick={fetchAppointments}
+              className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm">
+      {/* Header */}
+      <div className="px-6 py-4 border-b border-gray-200">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">Appointments</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              {appointments.length} total • {appointments.filter(app => app.status === 'pending').length} pending
+            </p>
+          </div>
+          
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Search */}
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search appointments..."
+                className="w-full sm:w-64 pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FiSearch className="w-4 h-4 text-gray-400" />
+              </div>
+            </div>
+
+            {/* Status Filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="cancelled">Cancelled</option>
+              <option value="completed">Completed</option>
+            </select>
+
+            {/* Date Filter */}
+            <input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto">
+        {filteredAppointments.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-gray-300 text-4xl mb-4">📅</div>
+            <h3 className="text-lg font-medium text-gray-700 mb-2">
+              {appointments.length === 0 ? 'No appointments yet' : 'No appointments found'}
+            </h3>
+            <p className="text-gray-500 text-sm">
+              {appointments.length === 0
+                ? 'Student appointments will appear here once scheduled.'
+                : 'Try adjusting your search or filters.'
+              }
+            </p>
+          </div>
+        ) : (
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
+                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Purpose</th>
+                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Grade</th>
+                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredAppointments.map((appointment) => (
+                <tr key={appointment.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="py-4 px-6">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{appointment.name}</div>
+                      <div className="text-xs text-gray-500">{appointment.email}</div>
+                    </div>
+                  </td>
+                  <td className="py-4 px-4">
+                    <div>
+                      <div className="text-sm text-gray-900">{formatDate(appointment.date)}</div>
+                      <div className="text-xs text-gray-500">{appointment.time}</div>
+                    </div>
+                  </td>
+                  <td className="py-4 px-4">
+                    <span className="text-sm text-gray-900">{appointment.purpose}</span>
+                  </td>
+                  <td className="py-4 px-4">
+                    <span className="text-sm text-gray-900">{appointment.grade_section}</span>
+                  </td>
+                  <td className="py-4 px-4">
+                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(appointment.status)}`}>
+                      {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+                    </span>
+                  </td>
+                  <td className="py-4 px-6">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleViewDetails(appointment)}
+                        className="text-xs px-3 py-1 text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                      >
+                        View
+                      </button>
+
+                      {appointment.status === 'pending' && (
+                        <>
+                          <button
+                            onClick={() => updateAppointmentStatus(appointment.id, 'confirmed')}
+                            className="text-xs px-3 py-1 text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
+                          >
+                            Confirm
+                          </button>
+                          <button
+                            onClick={() => updateAppointmentStatus(appointment.id, 'cancelled')}
+                            className="text-xs px-3 py-1 text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      )}
+
+                      {appointment.status === 'confirmed' && (
+                        <button
+                          onClick={() => updateAppointmentStatus(appointment.id, 'completed')}
+                          className="text-xs px-3 py-1 text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                        >
+                          Complete
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Footer */}
+      {filteredAppointments.length > 0 && (
+        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-between text-sm text-gray-500">
+            <span>
+              Showing {filteredAppointments.length} of {appointments.length} appointments
+            </span>
+            <button
+              onClick={fetchAppointments}
+              className="text-gray-500 hover:text-gray-700 flex items-center gap-1"
+            >
+              <FiRefreshCw className="w-4 h-4" />
+              Refresh
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Appointment Details Modal */}
+      {showDetailsModal && selectedAppointment && (
+        <AppointmentDetailsModal
+          appointment={selectedAppointment}
+          onClose={() => setShowDetailsModal(false)}
+          onStatusUpdate={updateAppointmentStatus}
+        />
+      )}
+    </div>
+  );
+}
+
+
 function ManageUsers() {
   const [users, setUsers] = useState([]);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -451,28 +711,57 @@ function ManageUsers() {
     fetchUsers();
   }, []);
 
+  useEffect(() => {
+    filterUsers();
+  }, [users, roleFilter, statusFilter, searchQuery]);
+
   const fetchUsers = async () => {
-    setIsLoading(true);
     try {
-      const res = await fetch('/api/admin/users', {
-        method: 'GET',
+      setIsLoading(true);
+      setError(null);
+      const response = await fetch('/api/admin/users', {
         headers: { 
           'x-usertype': localStorage.getItem('usertype') || '',
           'x-user-id': localStorage.getItem('userId') || '',
         },
       });
-      const data = await res.json();
-      if (res.ok) {
-        setUsers(data.users);
-        setError('');
-      } else {
-        setError(data.error || 'Failed to fetch users');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+      
+      const data = await response.json();
+      setUsers(data.users);
     } catch (error) {
-      setError('Something went wrong');
+      console.error('Error fetching users:', error);
+      setError('Failed to fetch users. Please try again.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const filterUsers = () => {
+    let filtered = users;
+
+    if (roleFilter !== 'all') {
+      filtered = filtered.filter(user => user.usertype === roleFilter);
+    }
+
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(user => user.status === statusFilter);
+    }
+
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(user => 
+        user.first_name?.toLowerCase().includes(query) ||
+        user.last_name?.toLowerCase().includes(query) ||
+        user.username?.toLowerCase().includes(query) ||
+        user.email?.toLowerCase().includes(query)
+      );
+    }
+
+    setFilteredUsers(filtered);
   };
 
   const validateForm = () => {
@@ -512,10 +801,9 @@ function ManageUsers() {
     e.preventDefault();
     if (!validateForm()) return;
     setError('');
-    setIsLoading(true);
 
     try {
-      const res = await fetch('/api/admin/users', {
+      const response = await fetch('/api/admin/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -524,26 +812,18 @@ function ManageUsers() {
         },
         body: JSON.stringify(formData),
       });
-      const data = await res.json();
-      if (res.ok) {
-        setUsers([...users, data.user]);
-        setIsCreateModalOpen(false);
-        setFormData({
-          username: '',
-          email: '',
-          password: '',
-          usertype: 'student',
-          firstName: '',
-          lastName: '',
-          status: 'active',
-        });
-      } else {
-        setError(data.error || 'Failed to create user');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+      
+      const data = await response.json();
+      setUsers([...users, data.user]);
+      setShowCreateModal(false);
+      resetForm();
     } catch (error) {
-      setError('Something went wrong');
-    } finally {
-      setIsLoading(false);
+      console.error('Error creating user:', error);
+      setError('Failed to create user. Please try again.');
     }
   };
 
@@ -551,10 +831,9 @@ function ManageUsers() {
     e.preventDefault();
     if (!validateForm()) return;
     setError('');
-    setIsLoading(true);
 
     try {
-      const res = await fetch(`/api/admin/users/${selectedUser.id}`, {
+      const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -563,27 +842,19 @@ function ManageUsers() {
         },
         body: JSON.stringify(formData),
       });
-      const data = await res.json();
-      if (res.ok) {
-        setUsers(users.map(user => (user.id === selectedUser.id ? data.user : user)));
-        setIsEditModalOpen(false);
-        setSelectedUser(null);
-        setFormData({
-          username: '',
-          email: '',
-          password: '',
-          usertype: 'student',
-          firstName: '',
-          lastName: '',
-          status: 'active',
-        });
-      } else {
-        setError(data.error || 'Failed to update user');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+      
+      const data = await response.json();
+      setUsers(users.map(user => (user.id === selectedUser.id ? data.user : user)));
+      setShowEditModal(false);
+      setSelectedUser(null);
+      resetForm();
     } catch (error) {
-      setError('Something went wrong');
-    } finally {
-      setIsLoading(false);
+      console.error('Error updating user:', error);
+      setError('Failed to update user. Please try again.');
     }
   };
 
@@ -595,27 +866,30 @@ function ManageUsers() {
     }
     if (!confirm('Are you sure you want to delete this user?')) return;
     setError('');
-    setIsLoading(true);
 
     try {
-      const res = await fetch(`/api/admin/users/${id}`, {
+      const response = await fetch(`/api/admin/users/${id}`, {
         method: 'DELETE',
         headers: { 
           'x-usertype': localStorage.getItem('usertype') || '',
           'x-user-id': localStorage.getItem('userId') || '',
         },
       });
-      const data = await res.json();
-      if (res.ok) {
-        setUsers(users.filter(user => user.id !== id));
-      } else {
-        setError(data.error || 'Failed to delete user');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+      
+      setUsers(users.filter(user => user.id !== id));
     } catch (error) {
-      setError('Something went wrong');
-    } finally {
-      setIsLoading(false);
+      console.error('Error deleting user:', error);
+      setError('Failed to delete user. Please try again.');
     }
+  };
+
+  const openCreateModal = () => {
+    resetForm();
+    setShowCreateModal(true);
   };
 
   const openEditModal = (user) => {
@@ -623,13 +897,26 @@ function ManageUsers() {
     setFormData({
       username: user.username,
       email: user.email,
-      password: '', // Leave empty to avoid accidental password changes
+      password: '',
       usertype: user.usertype,
       firstName: user.first_name,
       lastName: user.last_name,
       status: user.status,
     });
-    setIsEditModalOpen(true);
+    setShowEditModal(true);
+  };
+
+  const resetForm = () => {
+    setFormData({
+      username: '',
+      email: '',
+      password: '',
+      usertype: 'student',
+      firstName: '',
+      lastName: '',
+      status: 'active',
+    });
+    setError('');
   };
 
   const handleInputChange = (e) => {
@@ -637,312 +924,341 @@ function ManageUsers() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const closeCreateModal = () => {
-    setIsCreateModalOpen(false);
-    setError('');
-    setFormData({
-      username: '',
-      email: '',
-      password: '',
-      usertype: 'student',
-      firstName: '',
-      lastName: '',
-      status: 'active',
-    });
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'active': return 'text-green-700 bg-green-50';
+      case 'inactive': return 'text-red-700 bg-red-50';
+      default: return 'text-gray-700 bg-gray-50';
+    }
   };
 
-  const closeEditModal = () => {
-    setIsEditModalOpen(false);
-    setSelectedUser(null);
-    setError('');
-    setFormData({
-      username: '',
-      email: '',
-      password: '',
-      usertype: 'student',
-      firstName: '',
-      lastName: '',
-      status: 'active',
-    });
+  const getRoleColor = (role) => {
+    switch (role) {
+      case 'admin': return 'text-purple-700 bg-purple-50';
+      case 'guidance_advocate': return 'text-blue-700 bg-blue-50';
+      case 'student': return 'text-amber-700 bg-amber-50';
+      default: return 'text-gray-700 bg-gray-50';
+    }
   };
+
+  const formatRole = (role) => {
+    switch (role) {
+      case 'guidance_advocate': return 'Guidance Advocate';
+      default: return role.charAt(0).toUpperCase() + role.slice(1);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm">
+        <div className="flex justify-center items-center py-16">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+            <span className="text-gray-600 text-sm">Loading users...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm">
+        <div className="flex justify-center items-center py-16">
+          <div className="text-center">
+            <div className="text-red-500 text-3xl mb-4">⚠️</div>
+            <h4 className="text-lg font-medium text-gray-800 mb-2">Error Loading Users</h4>
+            <p className="text-gray-600 text-sm mb-4">{error}</p>
+            <button
+              onClick={fetchUsers}
+              className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
-      <div className="p-6 border-b border-gray-100">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-800">User Management</h3>
-          <button
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-            onClick={() => setIsCreateModalOpen(true)}
-          >
-            Add New User
-          </button>
+    <div className="bg-white rounded-lg shadow-sm">
+      {/* Header */}
+      <div className="px-6 py-4 border-b border-gray-200">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">User Management</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              {users.length} total • {users.filter(user => user.status === 'active').length} active
+            </p>
+          </div>
+          
+          {/* Filters and Add Button */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Search */}
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search users..."
+                className="w-full sm:w-64 pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FiSearch className="w-4 h-4 text-gray-400" />
+              </div>
+            </div>
+
+            {/* Role Filter */}
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">All Roles</option>
+              <option value="admin">Admin</option>
+              <option value="guidance_advocate">Guidance Advocate</option>
+              <option value="student">Student</option>
+            </select>
+
+            {/* Status Filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+
+            {/* Add User Button */}
+            <button
+              onClick={openCreateModal}
+              className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+            >
+              <FiUserPlus className="w-4 h-4" />
+              Add User
+            </button>
+          </div>
         </div>
       </div>
 
-      {error && (
-        <div className="m-6 p-3 bg-red-50 text-red-700 text-sm rounded-lg">
-          {error}
-        </div>
-      )}
-
-      {isLoading ? (
-        <div className="p-6 text-center text-gray-500">Loading...</div>
-      ) : (
-        <div className="overflow-x-auto">
+      {/* Table */}
+      <div className="overflow-x-auto">
+        {filteredUsers.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-gray-300 text-4xl mb-4">👥</div>
+            <h3 className="text-lg font-medium text-gray-700 mb-2">
+              {users.length === 0 ? 'No users yet' : 'No users found'}
+            </h3>
+            <p className="text-gray-500 text-sm">
+              {users.length === 0
+                ? 'Users will appear here once created.'
+                : 'Try adjusting your search or filters.'
+              }
+            </p>
+          </div>
+        ) : (
           <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
+                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {users.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{`${user.first_name} ${user.last_name}`}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.usertype}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {user.status}
+              {filteredUsers.map((user) => (
+                <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="py-4 px-6">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {user.first_name} {user.last_name}
+                      </div>
+                      <div className="text-xs text-gray-500">{user.email}</div>
+                    </div>
+                  </td>
+                  <td className="py-4 px-4">
+                    <span className="text-sm text-gray-900">{user.username}</span>
+                  </td>
+                  <td className="py-4 px-4">
+                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getRoleColor(user.usertype)}`}>
+                      {formatRole(user.usertype)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <button
-                      className="text-blue-600 hover:text-blue-900 mr-3"
-                      onClick={() => openEditModal(user)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="text-red-600 hover:text-red-900"
-                      onClick={() => handleDeleteUser(user.id)}
-                    >
-                      Delete
-                    </button>
+                  <td className="py-4 px-4">
+                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(user.status)}`}>
+                      {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                    </span>
+                  </td>
+                  <td className="py-4 px-6">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => openEditModal(user)}
+                        className="text-xs px-3 py-1 text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteUser(user.id)}
+                        className="text-xs px-3 py-1 text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        )}
+      </div>
+
+      {/* Footer */}
+      {filteredUsers.length > 0 && (
+        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-between text-sm text-gray-500">
+            <span>
+              Showing {filteredUsers.length} of {users.length} users
+            </span>
+            <button
+              onClick={fetchUsers}
+              className="text-gray-500 hover:text-gray-700 flex items-center gap-1"
+            >
+              <FiRefreshCw className="w-4 h-4" />
+              Refresh
+            </button>
+          </div>
         </div>
       )}
 
-           {/* Create User Modal */}
-      {isCreateModalOpen && (
+      {/* Create User Modal */}
+      {showCreateModal && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-100 sticky top-0 bg-white z-10">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <line x1="19" y1="8" x2="19" y2="14"></line>
-                    <line x1="22" y1="11" x2="16" y2="11"></line>
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900">Add New User</h3>
-                  <p className="text-sm text-gray-500">Create a new user account</p>
-                </div>
-              </div>
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <h3 className="text-xl font-semibold text-gray-900">Add New User</h3>
               <button
-                onClick={closeCreateModal}
+                onClick={() => setShowCreateModal(false)}
                 className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
+                ×
               </button>
             </div>
 
-            {/* Modal Body */}
             <div className="p-6">
               {error && (
-                <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl flex items-start gap-2">
-                  <div className="w-5 h-5 bg-red-200 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-red-600 text-xs font-bold">!</span>
-                  </div>
-                  <span>{error}</span>
+                <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg">
+                  {error}
                 </div>
               )}
 
               <form onSubmit={handleCreateUser} className="space-y-4">
-                {/* Personal Information Section */}
-                <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                      <polyline points="14 2 14 8 20 8"></polyline>
-                      <line x1="16" y1="13" x2="8" y2="13"></line>
-                      <line x1="16" y1="17" x2="8" y2="17"></line>
-                      <polyline points="10 9 9 9 8 9"></polyline>
-                    </svg>
-                    Personal Information
-                  </h4>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                      <input
-                        type="text"
-                        name="firstName"
-                        value={formData.firstName}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                        placeholder="First name"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                      <input
-                        type="text"
-                        name="lastName"
-                        value={formData.lastName}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                        placeholder="Last name"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Account Information Section */}
-                <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                      <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                    Account Information
-                  </h4>
-                  
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
                     <input
                       type="text"
-                      name="username"
-                      value={formData.username}
+                      name="firstName"
+                      value={formData.firstName}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      placeholder="Username"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="First name"
                     />
                   </div>
-
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                    <div className="relative">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                        <polyline points="22,6 12,13 2,6"></polyline>
-                      </svg>
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                        placeholder="Email"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <div className="relative">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                      </svg>
-                      <input
-                        type="password"
-                        name="password"
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                        placeholder="Password"
-                      />
-                    </div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Last name"
+                    />
                   </div>
                 </div>
 
-                {/* Role & Status Section */}
-                <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="3"></circle>
-                      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                    </svg>
-                    Role & Status
-                  </h4>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">User Type</label>
-                      <select
-                        name="usertype"
-                        value={formData.usertype}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
-                      >
-                        <option value="student">Student</option>
-                        <option value="admin">Admin</option>
-                        <option value="guidance_advocate">Guidance Advocate</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                      <select
-                        name="status"
-                        value={formData.status}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
-                      >
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                      </select>
-                    </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                  <input
+                    type="text"
+                    name="username"
+                    value={formData.username}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Username"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Email"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Password"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                    <select
+                      name="usertype"
+                      value={formData.usertype}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="student">Student</option>
+                      <option value="admin">Admin</option>
+                      <option value="guidance_advocate">Guidance Advocate</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select
+                      name="status"
+                      value={formData.status}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
                   </div>
                 </div>
 
-                {/* Modal Footer */}
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                <div className="flex justify-end gap-3 pt-4">
                   <button
                     type="button"
-                    onClick={closeCreateModal}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                    onClick={() => setShowCreateModal(false)}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    disabled={isLoading}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    {isLoading ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Creating...
-                      </>
-                    ) : (
-                      <>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                          <circle cx="8.5" cy="7" r="4"></circle>
-                          <polyline points="17 11 19 13 23 9"></polyline>
-                        </svg>
-                        Create User
-                      </>
-                    )}
+                    Create User
                   </button>
                 </div>
               </form>
@@ -952,213 +1268,131 @@ function ManageUsers() {
       )}
 
       {/* Edit User Modal */}
-      {isEditModalOpen && selectedUser && (
+      {showEditModal && selectedUser && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-100 sticky top-0 bg-white z-10">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900">Edit User</h3>
-                  <p className="text-sm text-gray-500">Update user information</p>
-                </div>
-              </div>
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <h3 className="text-xl font-semibold text-gray-900">Edit User</h3>
               <button
-                onClick={closeEditModal}
+                onClick={() => setShowEditModal(false)}
                 className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
+                ×
               </button>
             </div>
 
-            {/* Modal Body */}
             <div className="p-6">
               {error && (
-                <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl flex items-start gap-2">
-                  <div className="w-5 h-5 bg-red-200 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-red-600 text-xs font-bold">!</span>
-                  </div>
-                  <span>{error}</span>
+                <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg">
+                  {error}
                 </div>
               )}
 
               <form onSubmit={handleEditUser} className="space-y-4">
-                {/* Personal Information Section */}
-                <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                      <polyline points="14 2 14 8 20 8"></polyline>
-                      <line x1="16" y1="13" x2="8" y2="13"></line>
-                      <line x1="16" y1="17" x2="8" y2="17"></line>
-                      <polyline points="10 9 9 9 8 9"></polyline>
-                    </svg>
-                    Personal Information
-                  </h4>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                      <input
-                        type="text"
-                        name="firstName"
-                        value={formData.firstName}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                        placeholder="First name"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                      <input
-                        type="text"
-                        name="lastName"
-                        value={formData.lastName}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                        placeholder="Last name"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Account Information Section */}
-                <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                      <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                    Account Information
-                  </h4>
-                  
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
                     <input
                       type="text"
-                      name="username"
-                      value={formData.username}
+                      name="firstName"
+                      value={formData.firstName}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                      placeholder="Username"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="First name"
                     />
                   </div>
-
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                    <div className="relative">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                        <polyline points="22,6 12,13 2,6"></polyline>
-                      </svg>
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                        placeholder="Email"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Password
-                      <span className="text-xs text-gray-500 ml-1">(leave blank to keep unchanged)</span>
-                    </label>
-                    <div className="relative">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                      </svg>
-                      <input
-                        type="password"
-                        name="password"
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                        placeholder="New password"
-                      />
-                    </div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Last name"
+                    />
                   </div>
                 </div>
 
-                {/* Role & Status Section */}
-                <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="3"></circle>
-                      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                    </svg>
-                    Role & Status
-                  </h4>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">User Type</label>
-                      <select
-                        name="usertype"
-                        value={formData.usertype}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all bg-white"
-                      >
-                        <option value="student">Student</option>
-                        <option value="admin">Admin</option>
-                        <option value="guidance_advocate">Guidance Advocate</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                      <select
-                        name="status"
-                        value={formData.status}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all bg-white"
-                      >
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                      </select>
-                    </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                  <input
+                    type="text"
+                    name="username"
+                    value={formData.username}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Username"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Email"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Password <span className="text-xs text-gray-500">(leave blank to keep unchanged)</span>
+                  </label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="New password"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                    <select
+                      name="usertype"
+                      value={formData.usertype}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="student">Student</option>
+                      <option value="admin">Admin</option>
+                      <option value="guidance_advocate">Guidance Advocate</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select
+                      name="status"
+                      value={formData.status}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
                   </div>
                 </div>
 
-                {/* Modal Footer */}
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                <div className="flex justify-end gap-3 pt-4">
                   <button
                     type="button"
-                    onClick={closeEditModal}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                    onClick={() => setShowEditModal(false)}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    disabled={isLoading}
-                    className="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    {isLoading ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Updating...
-                      </>
-                    ) : (
-                      <>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
-                        </svg>
-                        Update User
-                      </>
-                    )}
+                    Update User
                   </button>
                 </div>
               </form>

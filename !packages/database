@@ -189,4 +189,28 @@ CREATE TABLE test_results (
     rating VARCHAR(50)
 );
 
-CREATE INDEX idx_test_results_student_id ON test_results(student_id); 
+CREATE INDEX idx_test_results_student_id ON test_results(student_id);
+
+
+CREATE TABLE appointments (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(200) NOT NULL,
+    grade_section VARCHAR(50),
+    appointment_date DATE NOT NULL,
+    appointment_time TIME,
+    counselor VARCHAR(100),
+    status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'cancelled')),
+    purpose VARCHAR(50) NOT NULL CHECK (purpose IN ('Intake Interview', 'Consultation', 'Follow-up')),
+    nature VARCHAR(50) NOT NULL CHECK (nature IN ('Walk-in / Voluntary', 'Referral', 'Guidance Personnel Initiated')),
+    referred_by VARCHAR(100),
+    personal_concerns TEXT[],
+    education_concerns TEXT[],
+    other_personal_concern TEXT,
+    other_education_concern TEXT,
+    remarks TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_appointments_user_id_date ON appointments(user_id, appointment_date);
